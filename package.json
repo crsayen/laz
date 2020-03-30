@@ -1,0 +1,19 @@
+{
+  "name": "laz",
+  "version": "0.0.1",
+  "description": "cards opposed to people in general",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/crsayen/laz.git"
+  },
+  "author": "Chris Sayen Alex Cloutier",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/crsayen/laz/issues"
+  },
+  "homepage": "https://github.com/crsayen/laz#readme"
+}
