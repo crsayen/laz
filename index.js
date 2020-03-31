@@ -1,9 +1,15 @@
 // https://raw.githubusercontent.com/crhallberg/json-against-humanity/master/full.md.json
 const _ = require('lodash');
+const redis = require("redis");
+const client = redis.createClient();
+const bcrypt = require('bcrypt');
 var app = require('express')();
 var http = require('http').createServer(app);
 var io = require('socket.io')(http);
+const deck = require('/deck.js')
 const axios = require('axios');
+
+client.on("error", e => console.log(e))
 
 app.get('/', function(req, res){
   res.sendFile(__dirname + '/index.html');
@@ -16,12 +22,51 @@ io.on('connection', (socket) => {
       playersFinished()
     }
   });
-});
 
-io.on('connection', (socket) => {
   socket.on('winnerSelected', (card) => {
     io.emit("playerWonRound", [selectedCards.get(card)])
   });
+
+  socket.on('newGame', (id, player) => {
+    client.exists(`${id}:game`, (exists) => {
+      if(exists) {
+        client.hget(`${id}:game`, "isPrivate", (isPrivate) => {
+          io.emit('idTaken', [isPrivate])
+        })
+      } else {
+        client.hmset(`${id}:game`, 'turn', 0, 'isPrivate', 0, () => {
+          client.lpush(`players:${id}`, player, () => {
+            io.emit('gameCreated', [id, player])
+          })
+        })
+      }
+    })
+
+    socket.on('makePrivate', (id, password) => {
+      bcrypt.hash(password, 10, (err, hash) => {
+        if (err) console.error(err)
+        client.hmset(`${id}:game`, 'password', hash, 'isPrivate', 1)
+      })
+    })
+  });
+
+  socket.on('joinPrivateGame', (id, password) => {
+    client.hget(`${id}:game`, "password", (hash) => {
+      bcrypt.compare(password, hash, (result) => {
+        if (result) {
+          // do stuff cause they knew the password
+        } else {
+          io.emit('incorrectPassword', [password])
+        }
+      })
+    })
+  })
+});
+
+io.on('connection')
+
+io.on('connection', (socket) => {
+
 });
 
 http.listen(3000, () => {
@@ -53,27 +98,19 @@ const playersFinished = () => {
   io.emit("playersFinished")
 }
 
-const getDeck = async () => {
-  try{
-    const response = await axios(
-      'https://raw.githubusercontent.com/crhallberg/json-against-humanity/master/full.md.json'
-    )
-    return {
-      drawWhite: makeDealer(_.shuffle(response.data.white)),
-      drawBlack: makeDealer(_.shuffle(response.data.black))
-    }
-  } catch (e) {
-    console.error(e)
-  }
+const startGame = (gameID) => {
+  dealRound(
+    players,
+    it,
+    makeDealer(_.shuffle(deck.white)),
+    makeDealer(_.shuffle(deck.black))
+  )
 }
 
-const play = (deck, players, it) => {
-  dealRound(players, it, deck.drawWhite, deck.drawBlack)
-}
+
+
 
 const dealRound = (players, it, drawWhite, drawBlack) => {
-  it += 1
-  it %= players.length
   let hand, black
   [black, drawBlack] = drawBlack(1)
   io.emit("dealBlackCard", [black])
@@ -90,7 +127,7 @@ const dealRound = (players, it, drawWhite, drawBlack) => {
 }
 
 const selectedCards = new Map()
-var it = -1
+var it = 0
 const players = [
   makePlayer("chris"),
   makePlayer("shea"),
