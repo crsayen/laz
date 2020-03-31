@@ -15,5 +15,13 @@
   "bugs": {
     "url": "https://github.com/crsayen/laz/issues"
   },
-  "homepage": "https://github.com/crsayen/laz#readme"
+  "homepage": "https://github.com/crsayen/laz#readme",
+  "dependencies": {
+    "axios": "^0.19.2",
+    "express": "^4.17.1",
+    "lodash": "^4.17.15",
+    "ramda": "^0.27.0",
+    "redis": "^3.0.2",
+    "socket.io": "^2.3.0"
+  }
 }
