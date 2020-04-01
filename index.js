@@ -6,18 +6,7 @@ const bcrypt = require('bcrypt');
 var app = require('express')();
 var http = require('http').createServer(app);
 var io = require('socket.io')(http);
-const deck = require('/deck.js')
 const axios = require('axios');
-// const { promisify } = require('util')
-// const getAsync = promisify(client.get).bind(client)
-// const hgetAsync = promisify(client.hget).bind(client)
-// const hsetAsync = promisify(client.hset).bind(client)
-// const hmgetAsync = promisify(client.hmget).bind(client)
-// const hmsetAsync = promisify(client.hmset).bind(client)
-// const llenAsync = promisify(client.llen).bind(client)
-// const rpushAsync = promisify(client.rpush).bind(client)
-// const rpopAsync = promisify(client.rpop).bind(client)
-// const existsAsync = promisify(client.exists).bind(client)
 
 const MAX_PLAYERS = 10
 
@@ -28,89 +17,110 @@ app.get('/', function(req, res){
 });
 
 io.on('connection', (socket) => {
-  socket.on('cardPlayed', (id, card) => {
-    selectedCards.set(card, id)
-    if(selectedCards.size == players.size - 1) { // TODO: account for multicard rounds
-      playersFinished()
-    }
-  });
 
-  socket.on('winnerSelected', (card) => {
-    io.emit("playerWonRound", [selectedCards.get(card)])
-  });
-
-  socket.on('newGame', (id, player) => {
+  socket.on('newGame', (id, player, callback) => {
+    console.log("makePrivate",id, player, callback)
     client.exists(`${id}:game`, (exists) => {
       if(exists) {
-        client.hget(`${id}:game`, "isPrivate", (isPrivate) => {
-          client.llen(`${id}:players`, (numberOfPlayers) => {
-            io.emit('gameExists', [isPrivate, (numberOfPlayers >= MAX_PLAYERS)])
-          })
-        })
+        callback(false)
       } else {
-        client.hmset(`${id}:game`, 'turn', 0, 'isPrivate', 0, 'open', 0, () => {
-          client.rpush(`${id}:players`, player, () => {
-            io.emit('gameCreated', [id])
+        client.hmset(
+          `${id}:game`,
+          'turn', 0,
+          'isPrivate', 0,
+          'started', 0, (OK) => {
+            client.mset(`${id}:blackCursor`, "0", `${id}:whiteCursor`, "0")
+              client.rpush(`${id}:players`, player, () => {
+                socket.join(id, (err) => {
+                  if (err) {
+                    console.error(err)
+                  } else {
+                    callback(true)
+                  }
+                }
+              )
           })
         })
       }
     })
 
-    socket.on('makePrivate', (id, password) => {
-      client.exists(`${id}:game`, (exists) => {
-        if (!exists) {
-          io.emit("error", [id, "Game does not exist"])
-        } else {
-          bcrypt.hash(password, 10, (err, hash) => {
-            if (err) console.error(err)
-            client.hmset(`${id}:game`, 'password', hash, 'isPrivate', 1)
-          })
-        }
-      })
+    socket.on('makePrivate', (id, password, callback) => {
+      console.log("id",id)
+      console.log("makePrivate",id, password, callback)
+      if (!client.exists(`${id}:game`)){
+        callback(false)
+      } else {
+        console.log("exists")
+        bcrypt.hash(password, 10, (err, hash) => {
+          if (err) console.error(err)
+          client.hmset(`${id}:game`, 'password', hash, 'isPrivate', 1)
+          callback(true)
+        })
+      }
     })
   });
 
-  socket.on('joinGame', (id, player, password=false) => {
-    var OK = false
-    client.hmget(`${id}:game`, "isPrivate", "open", "started", "password", (isPrivate, open, started,  hash) => {
-      if (!isPrivate) {
-        OK = true
-      } else {
-        if (password) {
-          bcrypt.compare(password, hash, (result) => {
-            if (result) {
-              addPlayer(id, player, started)
+  socket.on('joinGame', (id, player, callback) => {
+    console.log("makePrivate",id, player, callback)
+      if (client.exists(id)){
+        client.hmget(
+          `${id}:game`,
+          "isPrivate",
+          "started",
+          "password",
+          (err, [isPrivate, started,  hash]) => {
+            if (parseInt(isPrivate)){
+              console.log("isPrivate")
+              socket.emit("requestPassword", (password) => {
+                bcrypt.compare(password, hash, (err, result) => {
+                  if( err ) {
+                    console.error(err)
+                    socket.emit("failure", {message: "internal error"})
+                    return
+                  }
+                  if (result){
+                    
+                    callback(addPlayer(id, player, started))
+                    return
+                  }
+                  callback(false)
+                })
+              })
             } else {
-              io.emit('wrongPassword', [id])
+              callback(addPlayer(id, player, !!parseInt(started)))
             }
-          })
-        } else {
-          io.emit("error", [id, "Game requires a password"])
-        }
-      }
-      if (!open) {
-        io.emit("error" [id, "Game isn't open yet"])
-      } else if (OK) {
-        addPlayer(id, player, started)
+          }
+        )
       } else {
-        io.emit("error", [id, "Failed to join game"])
+        callback(false)
       }
-    })
   })
+
+  socket.on("playWhiteCard", (card, callback) => {
+    console.log(card)
+    callback(true)
+  })
+
+  socket.on("chooseWhiteCard", (card, callback) => {
+    console.log(card)
+    callback(true)
+  })
+
 })
 
 const addPlayer = (id, player, started) => {
+  console.log("adding:", player)
   client.rpush(`${id}:players`, player, (len) => {
     if (len > MAX_PLAYERS) {
       client.rpop(`${id}:players`)
-      io.emit("error", [id, "Game is full"])
+      console.log("too many players")
+      return false
     } else {
-
+      console.log("added", player)
+      return true
     }
   })
 }
-
-createGame(id)
 
 http.listen(3000, () => {
   console.log('listening on *:3000');
@@ -141,43 +151,14 @@ const playersFinished = () => {
   io.emit("playersFinished")
 }
 
-const startGame = (gameID) => {
-  dealRound(
-    players,
-    it,
-    makeDealer(_.shuffle(deck.white)),
-    makeDealer(_.shuffle(deck.black))
-  )
-}
-
-
-
-
-const dealRound = (players, it, drawWhite, drawBlack) => {
-  let hand, black
-  [black, drawBlack] = drawBlack(1)
-  io.emit("dealBlackCard", [black])
-  players.forEach((p, i, _a) => {
-    if (it == i) {
-      console.log(`${p.id}'s turn:`, black)
-      io.emit("playersTurn", [p.id])
-    } else {
-      [hand, drawWhite] = drawWhite(7)
-      p.deal(hand)
+const drawCards = (id, color, n) => {
+  var cards
+  client.incrby(`${id}:${color}Cursor`, n, (cursor) => {
+    if (cursor + n > DECK[color].length) {
+      cards = false
+      return
     }
-  });
-  return [drawWhite, drawBlack]
+    cards = DECK[color].slice(cursor - n, n)
+  })
+  return cards
 }
-
-const selectedCards = new Map()
-var it = 0
-const players = [
-  makePlayer("chris"),
-  makePlayer("shea"),
-  makePlayer("alex"),
-  makePlayer("grayce"),
-]
-
-getDeck()
-.then(deck => play(deck, players, it))
-.catch(error => console.error(error))
