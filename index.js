@@ -9,6 +9,8 @@ var io = require('socket.io')(http);
 const deck = require('/deck.js')
 const axios = require('axios');
 
+const MAX_PLAYERS = 10
+
 client.on("error", e => console.log(e))
 
 app.get('/', function(req, res){
@@ -31,12 +33,14 @@ io.on('connection', (socket) => {
     client.exists(`${id}:game`, (exists) => {
       if(exists) {
         client.hget(`${id}:game`, "isPrivate", (isPrivate) => {
-          io.emit('idTaken', [isPrivate])
+          client.llen(`${id}:players`, (numberOfPlayers) => {
+            io.emit('gameExists', [isPrivate, (numberOfPlayers >= MAX_PLAYERS)])
+          })
         })
       } else {
-        client.hmset(`${id}:game`, 'turn', 0, 'isPrivate', 0, () => {
-          client.lpush(`players:${id}`, player, () => {
-            io.emit('gameCreated', [id, player])
+        client.hmset(`${id}:game`, 'turn', 0, 'isPrivate', 0, 'created', 0, () => {
+          client.rpush(`${id}:players`, player, () => {
+            io.emit('gameCreated', [id])
           })
         })
       }
@@ -50,19 +54,44 @@ io.on('connection', (socket) => {
     })
   });
 
-  socket.on('joinPrivateGame', (id, password) => {
-    client.hget(`${id}:game`, "password", (hash) => {
-      bcrypt.compare(password, hash, (result) => {
-        if (result) {
-          // do stuff cause they knew the password
+  socket.on('joinGame', (id, player, password=false) => {
+    var OK = false
+    client.hmget(`${id}:game`, "isPrivate", "created", "password", (isPrivate, created, hash) => {
+      if (!isPrivate) {
+        OK = true
+      } else {
+        if (password) {
+          bcrypt.compare(password, hash, (result) => {
+            if (result) {
+              addPlayer(id, player)
+            } else {
+              io.emit('wrongPassword', [id])
+            }
+          })
         } else {
-          io.emit('incorrectPassword', [password])
+          io.emit("error", [id, "Game requires a password"])
         }
-      })
+      }
+      if (!created) {
+        io.emit("error" [id, "Game has not been started yet"])
+      } else if (OK) {
+        addPlayer(id,player)
+      } else {
+        io.emit("error", [id, "Failed to join game"])
+      }
     })
   })
-});
+})
 
+const addPlayer = (id, player) => {
+  client.rpush(`${id}:players`, player, (len) => {
+    if (len > MAX_PLAYERS) {
+      io.emit("error", [id, "Game is full"])
+    } else {
+      // join game
+    }
+  })
+}
 io.on('connection')
 
 io.on('connection', (socket) => {
