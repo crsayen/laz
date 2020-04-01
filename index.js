@@ -8,6 +8,16 @@ var http = require('http').createServer(app);
 var io = require('socket.io')(http);
 const deck = require('/deck.js')
 const axios = require('axios');
+// const { promisify } = require('util')
+// const getAsync = promisify(client.get).bind(client)
+// const hgetAsync = promisify(client.hget).bind(client)
+// const hsetAsync = promisify(client.hset).bind(client)
+// const hmgetAsync = promisify(client.hmget).bind(client)
+// const hmsetAsync = promisify(client.hmset).bind(client)
+// const llenAsync = promisify(client.llen).bind(client)
+// const rpushAsync = promisify(client.rpush).bind(client)
+// const rpopAsync = promisify(client.rpop).bind(client)
+// const existsAsync = promisify(client.exists).bind(client)
 
 const MAX_PLAYERS = 10
 
@@ -38,7 +48,7 @@ io.on('connection', (socket) => {
           })
         })
       } else {
-        client.hmset(`${id}:game`, 'turn', 0, 'isPrivate', 0, 'created', 0, () => {
+        client.hmset(`${id}:game`, 'turn', 0, 'isPrivate', 0, 'open', 0, () => {
           client.rpush(`${id}:players`, player, () => {
             io.emit('gameCreated', [id])
           })
@@ -47,23 +57,29 @@ io.on('connection', (socket) => {
     })
 
     socket.on('makePrivate', (id, password) => {
-      bcrypt.hash(password, 10, (err, hash) => {
-        if (err) console.error(err)
-        client.hmset(`${id}:game`, 'password', hash, 'isPrivate', 1)
+      client.exists(`${id}:game`, (exists) => {
+        if (!exists) {
+          io.emit("error", [id, "Game does not exist"])
+        } else {
+          bcrypt.hash(password, 10, (err, hash) => {
+            if (err) console.error(err)
+            client.hmset(`${id}:game`, 'password', hash, 'isPrivate', 1)
+          })
+        }
       })
     })
   });
 
   socket.on('joinGame', (id, player, password=false) => {
     var OK = false
-    client.hmget(`${id}:game`, "isPrivate", "created", "password", (isPrivate, created, hash) => {
+    client.hmget(`${id}:game`, "isPrivate", "open", "started", "password", (isPrivate, open, started,  hash) => {
       if (!isPrivate) {
         OK = true
       } else {
         if (password) {
           bcrypt.compare(password, hash, (result) => {
             if (result) {
-              addPlayer(id, player)
+              addPlayer(id, player, started)
             } else {
               io.emit('wrongPassword', [id])
             }
@@ -72,10 +88,10 @@ io.on('connection', (socket) => {
           io.emit("error", [id, "Game requires a password"])
         }
       }
-      if (!created) {
-        io.emit("error" [id, "Game has not been started yet"])
+      if (!open) {
+        io.emit("error" [id, "Game isn't open yet"])
       } else if (OK) {
-        addPlayer(id,player)
+        addPlayer(id, player, started)
       } else {
         io.emit("error", [id, "Failed to join game"])
       }
@@ -83,20 +99,18 @@ io.on('connection', (socket) => {
   })
 })
 
-const addPlayer = (id, player) => {
+const addPlayer = (id, player, started) => {
   client.rpush(`${id}:players`, player, (len) => {
     if (len > MAX_PLAYERS) {
+      client.rpop(`${id}:players`)
       io.emit("error", [id, "Game is full"])
     } else {
-      // join game
+
     }
   })
 }
-io.on('connection')
 
-io.on('connection', (socket) => {
-
-});
+createGame(id)
 
 http.listen(3000, () => {
   console.log('listening on *:3000');
