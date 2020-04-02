@@ -53,7 +53,6 @@
         }
 
         const addPlayer = (name) =>{
-            console.log("adding",name)
             socket.emit("joinGame", "mygame", name, (success) => {
                 $('#messages').append($('<li>').text(`added: ${success}`))
             })

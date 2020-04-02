@@ -159,7 +159,7 @@ const nextRound = (id) => {
           const black = _black[0]
           io.to(id).emit('dealBlack', black)
           players.forEach(player => {
-            drawCards(id, "white", black.pick, (cards) => {
+            drawCards(id, "white", black.pick, (cards) => { // TODO this needs to be LAST round's black.pick
               if (player !== czar){
                 if (cards) {
                   SOCKETS.get(player).emit("dealWhite", cards)
