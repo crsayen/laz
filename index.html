@@ -51,24 +51,24 @@
                 } else { $('#messages').append($('<li>').text("newgame failed"))}
             })
         }
-    
+
         const addPlayer = (name) =>{
             console.log("adding",name)
             socket.emit("joinGame", "mygame", name, (success) => {
                 $('#messages').append($('<li>').text(`added: ${success}`))
             })
         }
-    
+
         socket.on("requestPassword", (fn) => {
             $('#messages').append($('<li>').text("pw requested"));
             fn(PASSWORD)
         })
-    
+
         socket.on("myTurn", () => {
             MYTURN = true
             $('#messages').append($('<li>').text("its my turn"));
         })
-    
+
         socket.on("dealBlack", (card) => {
             $('#messages').append($('<li>').text(`black: ${card.text}`));
         })
@@ -80,7 +80,7 @@
                 $('#messages').append($('<li>').text(`black: ${card.text}`));
             });
         })
-    
+
         socket.on("failure", ({message}) => {
             $('#messages').append($('<li>').text(`failure: ${message}`))
         })

@@ -12,6 +12,8 @@ const MAX_PLAYERS = 10
 
 client.on("error", e => console.log(e))
 
+var SOCKETS = new Map()
+
 app.get('/', function(req, res){
   res.sendFile(__dirname + '/index.html');
 });
@@ -26,19 +28,20 @@ io.on('connection', (socket) => {
       } else {
         client.hmset(
           `${id}:game`,
-          'turn', 0,
+          'turnCursor', 0,
           'isPrivate', 0,
+          'blackCursor', 0,
+          'whiteCursor', 0,
           'started', 0, (OK) => {
-            client.mset(`${id}:blackCursor`, "0", `${id}:whiteCursor`, "0")
-              client.rpush(`${id}:players`, player, () => {
-                socket.join(id, (err) => {
-                  if (err) {
-                    console.error(err)
-                  } else {
-                    callback(true)
-                  }
+            addPlayer(id, player, false, socket, () => {
+              socket.join(id, (err) => {
+                if (err) {
+                  console.error(err)
+                } else {
+                  callback(true)
                 }
-              )
+              }
+            )
           })
         })
       }
@@ -79,21 +82,25 @@ io.on('connection', (socket) => {
                     return
                   }
                   if (result){
-                    
-                    callback(addPlayer(id, player, started))
+                    addPlayer(id, player, !!parseInt(started), callback)
                     return
                   }
                   callback(false)
                 })
               })
             } else {
-              callback(addPlayer(id, player, !!parseInt(started)))
+              addPlayer(id, player, !!parseInt(started), callback)
             }
           }
         )
       } else {
         callback(false)
       }
+  })
+
+  socket.on('chooseWinner', (card) => {
+    io.to(socket.rooms[0]).emit("winnerSelected", card)
+    nextRound(socket.rooms[0])
   })
 
   socket.on("playWhiteCard", (card, callback) => {
@@ -108,57 +115,79 @@ io.on('connection', (socket) => {
 
 })
 
-const addPlayer = (id, player, started) => {
+const addPlayer = (id, player, started, socket, callback) => {
   console.log("adding:", player)
+  var result
   client.rpush(`${id}:players`, player, (len) => {
     if (len > MAX_PLAYERS) {
       client.rpop(`${id}:players`)
       console.log("too many players")
-      return false
+      socket.emit("failure", {message: "Game full"})
+      callback(false)
     } else {
-      console.log("added", player)
-      return true
+      SOCKETS.set(player,socket)
+      callback(true)
     }
   })
+  return result
 }
 
 http.listen(3000, () => {
   console.log('listening on *:3000');
 });
 
-const makePlayer = (id) => {
-  return {
-    id: id,
-    deal: (hand) => {
-      console.log(id, hand)
-      io.emit("dealHand", [id, hand])
-    }
-  }
-}
-
-const makeDealer = (cards) => {
-  const deal = (cards, n) => {
-    if(!n) n = 1
-    return [
-      cards.slice(0, n),
-      _.curry(deal)(cards.slice(n))
-    ]
-  }
-  return _.curry(deal)(cards)
-}
-
-const playersFinished = () => {
-  io.emit("playersFinished")
-}
-
-const drawCards = (id, color, n) => {
+const drawCards = (id, color, n, callback) => {
   var cards
-  client.incrby(`${id}:${color}Cursor`, n, (cursor) => {
+  client.hincrby(`${id}:game`, `${color}Cursor`, n, (cursor) => {
     if (cursor + n > DECK[color].length) {
-      cards = false
-      return
+      callback(false)
     }
-    cards = DECK[color].slice(cursor - n, n)
+    callback(DECK[color].slice(cursor - n, n))
   })
-  return cards
 }
+
+const nextCzar = (id, callback) => {
+  client.hincrby(`${id}:game`, "turnCursor", 1, (cursor) => {
+    client.lindex(`${id}:players`, cursor - 1, callback)
+  })
+}
+
+const nextRound = (id) => {
+  client.lrange(`${id}:players`, 0, -1, (players) => {
+    nextCzar(id, (czar) => {
+      drawCards(id, "black", 1, (_black) => {
+          const black = _black[0]
+          io.to(id).emit('dealBlack', black)
+          players.forEach(player => {
+            drawCards(id, "white", black.pick, (cards) => {
+              if (player !== czar){
+                if (cards) {
+                  SOCKETS.get(player).emit("dealWhite", cards)
+                  return
+                }
+                io.to(id).emit("failure", {message: "Ran out of cards"})
+              }
+            }
+          )}
+        )
+      })
+    })
+  })
+}
+
+const getDeck = async () => {
+  try{
+    const response = await axios(
+      'https://raw.githubusercontent.com/crhallberg/json-against-humanity/master/full.md.json'
+    )
+    return {
+      white: response.data.white,
+      black: response.data.black
+    }
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+getDeck()
+.then((deck) => DECK = deck)
