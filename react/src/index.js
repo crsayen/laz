@@ -298,50 +298,33 @@ const drawCards = (filterfn, id, color, n, callback) => {
   f(n, []);
 };
 
-const bfilter = card => card.pick < 2;
-const wfilter = card => !card.text.includes("*");
-
-const incrPlayerCards = (id, player, n) => {
-  client.hincrby(`${id}:${player}`, "numberOfCards", n, handleRedisError)
-}
-
-const getNumPlayerCards = (id, player, callback) => {
-  client.hget(`${id}:${player}`, "numberOfCards", (err, numCards) => {
-    handleRedisError(err)
-    callback(numCards)
+const nextRound = (id) => {
+  client.lrange(`${id}:players`, 0, -1, (err, players) => {
+    nextCzar(id, (czar) => {
+      io.to(id).emit('newCzar', czar)
+      drawCards(id, "black", 1, (_black) => {
+        const black = _black[0]
+        client.hset(`${id}:game`, 'pick', black.pick)
+        io.to(id).emit('dealBlack', black)
+        players.forEach(player => {
+          client.hget(`${id}:${player}`, 'numberOfCards', (numberOfCards) => {
+            drawCards(id, "white", 7 - numberOfCards, (cards) => {
+              let isCzar = (player === czar)
+              SOCKETS.get(player).emit("myTurn", isCzar)
+              if (!isCzar){
+                if (cards) {
+                  SOCKETS.get(player).emit("dealWhite", cards)
+                  return
+                }
+                io.to(id).emit("failure", {message: "Ran out of cards"})
+              }
+            })
+          })
+        })
+      })
+    })
   })
 }
-
-const toPlayer = ([player, ...args]) => SOCKETS.get(player).emit
-
-const toRoom = (room, arg) => io.to(room).emit
-
-
-const nextRound = room => {
-  client.lrange(`${room}:players`, 0, -1, (err, players) => {
-    handleRedisError(err);
-    nextCzar(room, czar => {
-      toRoom(room)("newCzar", czar);
-      drawCards(bfilter, room, "black", 1, _black => {
-        let [black] = _black;
-        client.hset(`${room}:game`, "pick", black.pick, handleRedisError);
-        toRoom(room)("dealBlack", black);
-        players.forEach(player => {
-          getNumPlayerCards(room, player, (nCards) => {
-            drawCards(wfilter, room, "white", 7 - nCards, (cards) => {
-              incrPlayerCards(room, player, cards.length)
-              toPlayer(player)("myTurn", isCzar);
-              ((cards)
-                ? toPlayer(player)("dealWhite", cards)
-                : toRoom(room)("failure", "ran out of cards")
-              )
-            });
-          });
-        });
-      });
-    });
-  });
-};
 
 const handleRedisError = (err) => {
   console.log("handleRedisError", err)
