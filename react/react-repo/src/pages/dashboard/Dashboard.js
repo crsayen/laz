@@ -36,9 +36,7 @@ function Dashboard(props) {
     const [_userCard, _setUserCard] = useState([])
     const [userCards, setUserCards] = useState([])
     const [czar, setCzar] = useState('Waiting')
-    const [userCardPlayed, setUserCardPlayed] = useState(false)
     const [myTurn, setMyTurn] = useState(false)
-    const [playedCard, setPlayedCard] = useState([])
     const open = Boolean(anchorEl)
 
     const id = open ? 'add-section-popover' : undefined
@@ -107,21 +105,6 @@ function Dashboard(props) {
         setMyCards(newCards)
         props.socket.emit("playWhiteCard", playedCard, name, console.log)
     }
-
-    useEffect(() => {
-        if (playedCard) {
-            props.socket.on("whiteCardPlayed", card => {
-                if (!userCardPlayed){
-                    setUserCardPlayed(true)
-                }
-                console.log("card", card)
-                var data = userCards.slice()
-                var newCards = data.concat(card)
-                console.log("newcards", newCards)
-                setUserCards(newCards)
-            }, console.log)
-        }
-    }, [playedCard]);
 
     return (
         <>
@@ -250,7 +233,6 @@ function Dashboard(props) {
                             Cards in Play
                         </Typography>
                         <div className="carousel-holder">
-                        {userCardPlayed ? (
                             <Flickity options={flickityOptions} reloadOnUpdate>
                                 {userCards.map(data => (
                                     <Card
@@ -292,7 +274,6 @@ function Dashboard(props) {
                                     </Card>
                                 ))}
                             </Flickity>
-                             ) : (<></>)}
                         </div>
                     </Grid>
                     <Grid item lg={12} sm={12} xs={12}>
