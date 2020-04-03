@@ -15,9 +15,7 @@ import {
 import AccountCircleIcon from '@material-ui/icons/AccountCircle';
 import classNames from "classnames";
 import useStyles from "./styles";
-import { useDispatch } from 'react-redux'
 import { Typography } from "../Wrappers/Wrappers";
-import allActions from '../../actions'
 import {
   useLayoutState,
   useLayoutDispatch,
@@ -121,14 +119,6 @@ export default function Header(props) {
           >
             <AccountIcon className={classes.profileMenuIcon} /> Profile
           </MenuItem>
-          <MenuItem
-            className={classNames(
-              classes.profileMenuItem,
-              classes.headerMenuItem
-            )}
-          >
-            <AccountIcon className={classes.profileMenuIcon} /> Tasks
-          </MenuItem>
           <div className={classes.profileMenuUser}>
             <Typography
               className={classes.profileMenuLink}
@@ -145,13 +135,10 @@ export default function Header(props) {
 }
 
 function useLogout(history) {
-  //const dispatch = useDispatch()
   
   return {
       onLogout() {
-          //dispatch(allActions.expAction.setLogout())
           history.push("/login");
-          //persistor.flush();
       },
   }
 }

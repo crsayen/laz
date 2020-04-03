@@ -5,17 +5,11 @@ import {
   Switch,
   Redirect,
 } from "react-router-dom";
-import { useSelector } from 'react-redux'
-// components
 import Layout from "./Layout";
-
-// pages
 import Error from "../pages/error";
 import Login from "../pages/login";
 
-// context
 export default function App() {
-  // global
   const trueme = true;
 
   return (
@@ -35,7 +29,7 @@ export default function App() {
   );
 
   // #######################################################################
-
+// eslint-disable-next-line
   function PrivateRoute({ component, ...rest }) {
     return (
       <Route

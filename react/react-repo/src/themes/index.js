@@ -28,19 +28,19 @@ const overrides = {
   overrides: {
     MuiPaper: {
       root: {
-        backgroundColor: "#fbfbfb",
+        backgroundColor: "#ECECEC",
       }
     },
     MuiCard: {
       root: {
         boxShadow:
-          "0px 3px 11px 0px #e8e6e3, 0 3px 3px -2px #B2B2B21A, 0 1px 8px 0 #9A9A9A1A"
+          "0px 3px 11px 0px #d9d9d9, 0 3px 3px -2px #B2B2B21A, 0 1px 8px 0 #9A9A9A1A"
       }
     },
     MUIDataTable: {
       paper: {
         boxShadow:
-          "0px 3px 11px 0px #e8e6e3, 0 3px 3px -2px #B2B2B21A, 0 1px 8px 0 #9A9A9A1A"
+          "0px 3px 11px 0px #d9d9d9, 0 3px 3px -2px #B2B2B21A, 0 1px 8px 0 #9A9A9A1A"
       }
     },
     MuiBackdrop: {
@@ -50,14 +50,14 @@ const overrides = {
     },
     MuiMenu: {
       paper: {
-        backgroundColor: "#f8f8f7",
+        backgroundColor: "#ECECEC",
         boxShadow:
-          "0px 3px 11px 0px #e8e6e3, 0 3px 3px -2px #B2B2B21A, 0 1px 8px 0 #9A9A9A1A"
+          "0px 3px 11px 0px #d9d9d9, 0 3px 3px -2px #B2B2B21A, 0 1px 8px 0 #9A9A9A1A"
       }
     },
     MuiSelect: {
       icon: {
-        color: "#B9B9B9"
+        color: "#B3B3B3"
       }
     },
     MuiListItem: {
