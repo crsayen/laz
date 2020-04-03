@@ -58,10 +58,10 @@ function Dashboard(props) {
         pageDots: false,
     }
 
-    
+
 
       const handleClick = () => {
-        
+
     }
 
     const handleWinnerDialogClose = () => {
@@ -167,7 +167,7 @@ function Dashboard(props) {
                                     Card Czar:
                                 </Typography>
                                 <Box
-                                   
+
                                     alignItems="center"
                                     justifyContent="center"
                                 >
@@ -197,7 +197,7 @@ function Dashboard(props) {
                                     Up Next:
                                 </Typography>
                                 <Box
-                                    
+
                                     alignItems="center"
                                     justifyContent="center"
                                 >
@@ -219,7 +219,7 @@ function Dashboard(props) {
                                     />
                                 </Box>
                             </Grid>
-                          
+
                         </Grid>
                         </Grid>
                         <Grid item xs={12}>
@@ -238,7 +238,7 @@ function Dashboard(props) {
                         </>
                         ) : (<></>)}
                         </Grid>
-                 
+
                     <Grid item lg={12} sm={12} xs={12}>
                         <Divider variant="middle" />
                         <Typography
