@@ -1,5 +1,5 @@
 // eslint-disable-next-line
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 // eslint-disable-next-line
 import { Grid, Paper, Box } from '@material-ui/core'
 // eslint-disable-next-line
@@ -7,6 +7,7 @@ import axios from 'axios'
 import useStyles from './styles'
 // eslint-disable-next-line
 import Widget from '../../components/Widget'
+import WinnerDialog from '../../components/WinnerDialog'
 import Flickity from 'react-flickity-component'
 import 'flickity/css/flickity.css'
 import './sliders.css'
@@ -50,9 +51,14 @@ const name = Array(10).fill(null).map(() => Math.floor(Math.random() * 10).toStr
 
 function Dashboard(props) {
     var classes = useStyles()
+    const [winnderDialogOpen, setWinnerDialogOpen] = useState(false)
+    const [winnerName, setWinnerName] = useState('')
+    const [allCardsPlayed, setAllCardsPlayed] = useState(false)
+    const [winnerCards, setWinnerCards] = useState([{text:''}])
     const [gameID, setgameID] = useState("test1");
     const [myCards, setMyCards] = useState([])
     const [blackCard, setBlackCard] = useState(false)
+    const [_userCard, _setUserCard] = useState([])
     const [userCards, setUserCards] = useState([])
     const [czar, setCzar] = useState('Waiting')
     const [userCardPlayed, setUserCardPlayed] = useState(false)
@@ -75,30 +81,42 @@ function Dashboard(props) {
       const handleClick = () => {
         sendMessage()
     }
-    props.socket.on("dealWhite", setMyCards)
-    props.socket.on("dealBlack", setBlackCard)
-    props.socket.on("newCzar", setCzar)
-    props.socket.on("myTurn", setMyTurn)
-    props.socket.on("whiteCardPlayed", card => {
-        if (!userCardPlayed){
+
+    const handleWinnerDialogClose = () => {
+        setWinnerDialogOpen(false)
+        props.socket.emit("ready", true)
+    }
+
+    useEffect(() => {
+        props.socket.on("dealWhite", setMyCards)
+        props.socket.on("dealBlack", setBlackCard)
+        props.socket.on("newCzar", setCzar)
+        props.socket.on("myTurn", setMyTurn)
+        props.socket.on('startgame', console.log)
+        props.socket.on('allCardsPlayed', () => setAllCardsPlayed(true))
+        props.socket.on('winnerSelected', (user, cards) => {
+            setAllCardsPlayed(false)
+            setWinnerName(user)
+            setUserCards([])
+            setWinnerCards(cards)
+        })
+        props.socket.on("whiteCardPlayed", card => {
             setUserCardPlayed(true)
-        }
-        console.log("card", card)
-        var data = userCards.slice()
-        var newCards = data.concat(card)
-        console.log("newcards", newCards)
+            _setUserCard(card)
+        })
+    },[])
+    useEffect(() => {
+        let newCards = userCards.slice().concat(_userCard)
         setUserCards(newCards)
-    }, console.log)
-    props.socket.on('startgame', console.log)
-    props.socket.on('winnerSelected', (user, cards) => {
-        console.log("user won:",user)
-        console.log("winning cards:", cards)
-    })
+    },[_userCard])
+    useEffect(() => {
+        setWinnerDialogOpen(!!winnerCards[0].text)
+    }, [winnerCards])
 
     const newGame = () => props.socket.emit('newGame', gameID, name, console.log)
     const joinGame = () => props.socket.emit('joinGame', gameID, name, console.log)
     const startGame = () => props.socket.emit('startGame', gameID, console.log)
-    const selectCard = (card) => props.socket.broadcast.emit("chooseWhiteCard", card, console.log)
+    const selectCard = (card) => props.socket.emit("chooseWhiteCard", card, console.log)
     const playCard = (e, playedCard) => {
         e.preventDefault();
         let newCards = myCards.filter(card => card != playedCard)
@@ -108,6 +126,12 @@ function Dashboard(props) {
 
     return (
         <Grid container justify="center" alignItems="center" spacing={2}>
+                <WinnerDialog
+                    onClose={handleWinnerDialogClose}
+                    userName={winnerName}
+                    cards={winnerCards}
+                    open={winnderDialogOpen}
+                />
             <Grid item lg={12} sm={12} xs={12}>
                 <Grid
                     container
@@ -251,7 +275,7 @@ function Dashboard(props) {
                                                 label={data.user}
                                                 onClick={handleClick}
                                             />
-                                            {myTurn ? (
+                                            {myTurn && allCardsPlayed ? (
                                             <Chip
                                             color="success"
                                             colorBrightness={'light'}
