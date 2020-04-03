@@ -35,6 +35,7 @@ function Dashboard(props) {
     const [blackCard, setBlackCard] = useState(false)
     const [_userCard, _setUserCard] = useState([])
     const [userCards, setUserCards] = useState([])
+    const [userCardPlayed, setUserCardPlayed] = useState(false)
     const [czar, setCzar] = useState('Waiting')
     const [myTurn, setMyTurn] = useState(false)
     const open = Boolean(anchorEl)
@@ -99,8 +100,6 @@ function Dashboard(props) {
     const selectCard = (card) => props.socket.emit("chooseWhiteCard", card, console.log)
     const playCard = (e, playedCard) => {
         e.preventDefault();
-        setPlayedCard(playedCard)
-        // eslint-disable-next-line
         let newCards = myCards.filter(card => card != playedCard)
         setMyCards(newCards)
         props.socket.emit("playWhiteCard", playedCard, name, console.log)
