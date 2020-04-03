@@ -31,6 +31,7 @@ export default makeStyles(theme => ({
         borderRadius: '13px',
         background: 'black',
         color: 'white',
+        width: '100%'
     },
     actions: {
         display: 'inline',
@@ -43,6 +44,7 @@ export default makeStyles(theme => ({
     mycard: {
       padding: '5px',
       margin: '5px',
+      
         borderRadius: '13px',
         // eslint-disable-next-line
         width: 'intrinsic' /* Safari/WebKit uses a non-standard name */,
@@ -68,12 +70,22 @@ export default makeStyles(theme => ({
         color: 'black',
     },
     pos: {
-        marginBottom: 15,
+        marginBottom: 5,
+        overflow: 'auto',
         height: '100%',
         bottom: 0,
-      width: '120px',
+      width: '145px',
       // eslint-disable-next-line
-      height: '75px'
+      height: '85px'
+    },
+    pos: {
+        marginBottom: 5,
+        overflow: 'auto',
+        height: '100%',
+        bottom: 0,
+      width: '145px',
+      // eslint-disable-next-line
+      height: '85px'
     },
     bullet: {
         display: 'inline-block',

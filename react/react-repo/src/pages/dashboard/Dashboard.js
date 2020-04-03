@@ -1,5 +1,5 @@
 // eslint-disable-next-line
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 // eslint-disable-next-line
 import { Grid, Paper, Box } from '@material-ui/core'
 // eslint-disable-next-line
@@ -57,6 +57,7 @@ function Dashboard(props) {
     const [czar, setCzar] = useState('Waiting')
     const [userCardPlayed, setUserCardPlayed] = useState(false)
     const [myTurn, setMyTurn] = useState(false)
+    const [playedCard, setPlayedCard] = useState([])
     const flickityOptions = {
         adaptiveHeight: true,
         initialIndex: 0,
@@ -79,6 +80,7 @@ function Dashboard(props) {
     props.socket.on("dealBlack", setBlackCard)
     props.socket.on("newCzar", setCzar)
     props.socket.on("myTurn", setMyTurn)
+    /*
     props.socket.on("whiteCardPlayed", card => {
         if (!userCardPlayed){
             setUserCardPlayed(true)
@@ -89,6 +91,7 @@ function Dashboard(props) {
         console.log("newcards", newCards)
         setUserCards(newCards)
     }, console.log)
+    */
     props.socket.on('startgame', console.log)
     props.socket.on('winnerSelected', (user, cards) => {
         console.log("user won:",user)
@@ -98,13 +101,29 @@ function Dashboard(props) {
     const newGame = () => props.socket.emit('newGame', gameID, name, console.log)
     const joinGame = () => props.socket.emit('joinGame', gameID, name, console.log)
     const startGame = () => props.socket.emit('startGame', gameID, console.log)
-    const selectCard = (card) => props.socket.broadcast.emit("chooseWhiteCard", card, console.log)
+    const selectCard = (card) => props.socket.emit("chooseWhiteCard", card, console.log)
     const playCard = (e, playedCard) => {
         e.preventDefault();
+        setPlayedCard(playedCard)
         let newCards = myCards.filter(card => card != playedCard)
         setMyCards(newCards)
         props.socket.emit("playWhiteCard", playedCard, name, console.log)
     }
+
+    useEffect(() => {
+        if (playedCard) {
+            props.socket.on("whiteCardPlayed", card => {
+                if (!userCardPlayed){
+                    setUserCardPlayed(true)
+                }
+                console.log("card", card)
+                var data = userCards.slice()
+                var newCards = data.concat(card)
+                console.log("newcards", newCards)
+                setUserCards(newCards)
+            }, console.log)
+        }
+    }, [playedCard]);
 
     return (
         <Grid container justify="center" alignItems="center" spacing={2}>
@@ -115,7 +134,7 @@ function Dashboard(props) {
                     alignItems="center"
                     spacing={2}
                 >
-                    <Grid item lg={3} sm={3} xs={12}>
+                    <Grid item lg={8} sm={8} xs={8}>
                         <Grid
                             container
                             justify="center"
@@ -124,14 +143,14 @@ function Dashboard(props) {
                             spacing={2}
                         >
                             <Grid item xs={12}>
-                            <Button style={{ margin: 10 }} color="primary" variant="contained" onClick={() => newGame()}>New Game</Button>
-                            <Button style={{ margin: 10 }} color="primary" variant="contained" onClick={() => joinGame()}>Join Game</Button>
-                            <Button style={{ margin: 10 }} color="primary" variant="contained" onClick={() => startGame()}>Start Game</Button>
-                            <Button style={{ margin: 10 }} color="primary" variant="contained">butt two</Button>
-                            <Button style={{ margin: 10 }} color="primary" variant="contained">butt three</Button>
+                                <div style={{ display: 'flex', textAlign: 'center', justifyContent: 'center', alignItems: "center",  margin: '0 auto' }}>
+                            <Button style={{ margin: 5 }} size="small" color="primary" variant="contained" onClick={() => newGame()}>New Game</Button>
+                            <Button style={{ margin: 5 }} size="small" color="primary" variant="contained" onClick={() => joinGame()}>Join Game</Button>
+                            <Button style={{ margin: 5 }} size="small" color="primary" variant="contained" onClick={() => startGame()}>Start Game</Button>
+                            </div>
                             {/* <form><input style="text" value={"enter name"} onChange={setName}/></form> */}
                             </Grid>
-                            <Grid item xs={6}>
+                            <Grid item lg={6} sm={6} xs={12}>
                                 <Typography
                                     colorBrightness="hint"
                                     variant="caption"
@@ -141,12 +160,12 @@ function Dashboard(props) {
                                     Card Czar:
                                 </Typography>
                                 <Box
-                                    display="flex"
+                                   
                                     alignItems="center"
                                     justifyContent="center"
                                 >
                                     <Chip
-                                        size="small"
+                                        size="large"
                                         color="success"
                                         variant="outlined"
                                         avatar={
@@ -162,8 +181,6 @@ function Dashboard(props) {
                                         onClick={handleClick}
                                     />
                                 </Box>
-                            </Grid>
-                            <Grid item lg={3} sm={3} xs={12}>
                                 <Typography
                                     colorBrightness="hint"
                                     variant="caption"
@@ -173,12 +190,12 @@ function Dashboard(props) {
                                     Up Next:
                                 </Typography>
                                 <Box
-                                    display="flex"
+                                    
                                     alignItems="center"
                                     justifyContent="center"
                                 >
                                     <Chip
-                                        size="small"
+                                        size="large"
                                         variant="outlined"
                                         color="warning"
                                         avatar={
@@ -195,7 +212,9 @@ function Dashboard(props) {
                                     />
                                 </Box>
                             </Grid>
+                          
                         </Grid>
+                        <Grid item xs={12}>
                         {blackCard ? (
                             <>
                             <Card className={classes.blackcard}>
@@ -210,6 +229,7 @@ function Dashboard(props) {
                             </Card>
                         </>
                         ) : (<></>)}
+                        </Grid>
                     </Grid>
                     <Grid item lg={12} sm={12} xs={12}>
                         <Divider variant="middle" />

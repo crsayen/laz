@@ -37,7 +37,7 @@ const getGreeting = () => {
 
 function Login(props) {
   var classes = useStyles();
-  const currentExp = useSelector(state => state.exp)
+
 
   // local
   // eslint-disable-next-line
@@ -117,7 +117,7 @@ function Login(props) {
                 fullWidth
               />
               <div className={classes.formButtons}>
-                {currentExp.loading ? (
+                {false ? (
                   <CircularProgress size={26} className={classes.loginLoader} />
                 ) : (
                   <Button
