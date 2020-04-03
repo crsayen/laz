@@ -121,9 +121,31 @@ io.on('connection', (socket) => {
     client.hincrby(`${room}:game`, 'numberOfCardsPlayed', 1, (err, numberOfCardsPlayed) => {
       if (err) console.error(err)
       console.log("numberOfCardsPlayed",numberOfCardsPlayed)
-      io.emit("whiteCardPlayed", [{card:card, user:player}])
       client.hget(`${room}:game`, "pick", (err, pick) => {
         if (err) console.error(err)
+        client.hget(`${room}:${player}`, "playedCards", (err, playedCardsString) => {
+          if (err) console.error(err)
+          let playedCardsJson = JSON.parse(playedCardsString)
+          console.log("playedCardsJson", playedCardsJson)
+          let playedCards = (
+            (playedCardsJson.length) 
+            ? playedCardsJson.map((string) => JSON.parse(string)).push(card)
+            : [card]
+          )
+          console.log("card", card)
+          console.log("playedCards", playedCards)
+          if (pick == playedCards.length) {
+            io.to(room).emit(
+              "whiteCardPlayed",
+              playedCards.map(_card => (
+                {card: _card, user: player}
+              ))
+            )
+            client.hset(`${room}:${player}`, "playedCards", "[]")
+          } else {
+            client.hset(`${room}:${player}`, "playedCards", JSON.stringify([playedCards]))
+          }
+        })
         console.log("pick", pick)
         client.llen(`${room}:players`, (err, numPlayers) => {
           if (err) console.error(err)
@@ -197,6 +219,7 @@ const addPlayer = (id, player, started, socket, callback) => {
       socket.emit("failure", {message: "Game full"})
       callback(false)
     } else {
+      client.hset(`${id}:${player}`, "playedCards", "[]", (err) => console.error(err))
       client.hset(`${id}:${player}`, 'numberOfCards', 0, (err) => console.error(err))
       SOCKETS.set(player,socket)
       socket.join(id, (err) => {
