@@ -5,7 +5,7 @@ import Widget from "../../../components/Widget";
 import { Typography, Button } from "../../../components/Wrappers";
 
 
-function SettingsPopper({ open, id, anchorEl }) {
+function SettingsPopper({ open, id, anchorEl, newGame, joinGame, startGame, }) {
   //const classes = useStyles();
 
   return (
@@ -29,8 +29,8 @@ function SettingsPopper({ open, id, anchorEl }) {
               Game Controls
             </Typography>
               <Box display="flex" justifyContent="space-between">
-              <Button style={{ margin: 5 }} color="primary" variant="contained">New</Button>
-              <Button style={{ margin: 5 }} color="primary" variant="contained">Start</Button>
+              <Button style={{ margin: 5 }} color="primary" variant="contained" onClick={() => newGame()} >New</Button>
+              <Button style={{ margin: 5 }} color="primary" variant="contained" onClick={() => startGame()}>Start</Button>
               </Box>
           </>
           <Divider style={{ width: "100%", margin: "8px 0 16px 0" }} />
@@ -50,6 +50,7 @@ function SettingsPopper({ open, id, anchorEl }) {
             color={"primary"}
             variant={"contained"}
             style={{ width: "100%" }}
+            onClick={() => joinGame()}
           >
             Join
           </Button>

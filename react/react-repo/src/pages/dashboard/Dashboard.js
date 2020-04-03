@@ -10,7 +10,6 @@ import useStyles from './styles'
 // eslint-disable-next-line
 import Flickity from 'react-flickity-component'
 import 'flickity/css/flickity.css'
-import './sliders.css'
 // eslint-disable-next-line
 import {Chip,Typography,Button,Avatar,Badge} from '../../components/Wrappers'
 import Card from '@material-ui/core/Card'
@@ -106,7 +105,7 @@ function Dashboard(props) {
                 setUserCards(newCards)
             }, console.log)
         }
-    }, [playedCard, props.socket, userCardPlayed, userCards]);
+    }, [playedCard]);
 
     return (
         <>
@@ -119,7 +118,7 @@ function Dashboard(props) {
                 >
                  <Icon path={SettingsIcon} size={1} color="#fff" />
                 </Fab>
-                <SettingsPopper id={id} open={open} anchorEl={anchorEl} />
+                <SettingsPopper id={id} open={open} anchorEl={anchorEl} newGame={newGame} joinGame={joinGame} startGame={startGame}/>
         <Grid container justify="center" alignItems="center" spacing={2}>
             <Grid item lg={12} sm={12} xs={12}>
                 <Grid
@@ -136,14 +135,6 @@ function Dashboard(props) {
                             style={{ paddingBottom: 20 }}
                             spacing={2}
                         >
-                            <Grid item xs={12}>
-                            <div style={{ display: 'flex', textAlign: 'center', justifyContent: 'center', alignItems: "center",  margin: '0 auto' }}>
-                            <Button style={{ margin: 5 }} size="small" color="primary" variant="contained" onClick={() => newGame()}>New Game</Button>
-                            <Button style={{ margin: 5 }} size="small" color="primary" variant="contained" onClick={() => joinGame()}>Join Game</Button>
-                            <Button style={{ margin: 5 }} size="small" color="primary" variant="contained" onClick={() => startGame()}>Start Game</Button>
-                            </div>
-                            {/* <form><input style="text" value={"enter name"} onChange={setName}/></form> */}
-                            </Grid>
                             <Grid item lg={6} sm={6} xs={12}>
                                 <Typography
                                     colorBrightness="hint"
@@ -159,7 +150,7 @@ function Dashboard(props) {
                                     justifyContent="center"
                                 >
                                     <Chip
-                                        size="medium"
+                                        size="small"
                                         color="success"
                                         variant="outlined"
                                         avatar={
@@ -189,7 +180,7 @@ function Dashboard(props) {
                                     justifyContent="center"
                                 >
                                     <Chip
-                                        size="medium"
+                                        size="small"
                                         variant="outlined"
                                         color="warning"
                                         avatar={
@@ -208,6 +199,7 @@ function Dashboard(props) {
                             </Grid>
                           
                         </Grid>
+                        </Grid>
                         <Grid item xs={12}>
                         {blackCard ? (
                             <>
@@ -224,7 +216,7 @@ function Dashboard(props) {
                         </>
                         ) : (<></>)}
                         </Grid>
-                    </Grid>
+                 
                     <Grid item lg={12} sm={12} xs={12}>
                         <Divider variant="middle" />
                         <Typography
@@ -255,7 +247,7 @@ function Dashboard(props) {
                                         <CardActions>
                                             <Chip
                                                 color="info"
-                                                colorBrightness={'dark'}
+                                                colorBrightness={'light'}
                                                 avatar={
                                                     <Avatar color="info">
                                                         {data.user.charAt(0).toUpperCase()}

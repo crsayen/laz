@@ -38,9 +38,23 @@ export default makeStyles(theme => ({
     },
     blackcard: {
         borderRadius: '13px',
+        margin: '0 auto',
         background: 'black',
         color: 'white',
-        width: '100%'
+        width: 'auto',
+        [theme.breakpoints.down("xl")]: {
+            width: "25%"
+        },
+        [theme.breakpoints.down("lg")]: {
+            width: "25%"
+        },
+        [theme.breakpoints.down("md")]: {
+            width: "50%"
+        },
+        [theme.breakpoints.down("sm")]: {
+            width: "100%",
+            height: "60%"
+        },
     },
     actions: {
         display: 'inline',
@@ -51,8 +65,8 @@ export default makeStyles(theme => ({
         height: '100%',
     },
     mycard: {
-      padding: '5px',
-      margin: '5px',
+      padding: '6px',
+      margin: '6px',
       
         borderRadius: '13px',
         // eslint-disable-next-line
@@ -79,22 +93,27 @@ export default makeStyles(theme => ({
         color: 'black',
     },
     pos: {
-        marginBottom: 5,
+        marginBottom: 1,
         overflow: 'auto',
         height: '100%',
         bottom: 0,
       width: '145px',
       // eslint-disable-next-line
-      height: '85px'
+      height: '95px'
     },
     pos2: {
-        marginBottom: 5,
+        marginBottom: 1,
+        padding: 1,
         overflow: 'auto',
-        height: '100%',
         bottom: 0,
-      width: '145px',
+      //width: 'auto',
       // eslint-disable-next-line
-      height: '85px'
+      minWidth: '50%',
+      height: '85px',
+      [theme.breakpoints.down("sm")]: {
+        width: "90%",
+        height: '95px'
+         },
     },
     bullet: {
         display: 'inline-block',
