@@ -1,12 +1,13 @@
 // eslint-disable-next-line
 import React, { useState, useEffect } from 'react'
 // eslint-disable-next-line
-import { Grid, Paper, Box } from '@material-ui/core'
+import { Grid, Paper, Box, Fab, } from '@material-ui/core'
+import Icon from '@mdi/react'
+import { mdiSettings as SettingsIcon } from '@mdi/js'
 // eslint-disable-next-line
 import axios from 'axios'
 import useStyles from './styles'
 // eslint-disable-next-line
-import Widget from '../../components/Widget'
 import Flickity from 'react-flickity-component'
 import 'flickity/css/flickity.css'
 import './sliders.css'
@@ -17,40 +18,15 @@ import CardActions from '@material-ui/core/CardActions'
 import CardContent from '@material-ui/core/CardContent'
 import Divider from '@material-ui/core/Divider'
 import { socketConnect } from 'socket.io-react';
-const R = require('ramda')
-
-// const userCards = [
-//     { user: 'ChrisS', cardcontent: "Waiting 'til marriage.", id: '1' },
-//     { user: 'AlexC', cardcontent: 'Spectacular abs.', id: '2' },
-//     { user: 'GrayceC', cardcontent: 'Mouth herpes.', id: '3' },
-//     { user: 'SheaB', cardcontent: 'Getting drunk on mouthwash.', id: '4' },
-//     { user: 'AustinH', cardcontent: 'A sad handjob', id: '5' },
-//     { user: 'Dweezy', cardcontent: 'A cooler full of organs.', id: '6' },
-// ]
-
-// const myCards = [
-//     { user: 'AlexC', cardcontent: 'Being a motherfucking sorcerer.', id: '1' },
-//     { user: 'AlexC', cardcontent: 'A balanced breakfast.', id: '2' },
-//     { user: 'AlexC', cardcontent: 'A zesty breakfast burrito.', id: '3' },
-//     { user: 'AlexC', cardcontent: 'Winking at old people.', id: '4' },
-//     { user: 'AlexC', cardcontent: 'Stephen Hawking talking dirty.', id: '5' },
-//     {
-//         user: 'AlexC',
-//         cardcontent: 'Getting so angry that you pop a boner.',
-//         id: '6',
-//     },
-//     {
-//         user: 'AlexC',
-//         cardcontent: 'An M. Night Shyamalan plot twist.',
-//         id: '7',
-//     },
-// ]
+import SettingsPopper from './components/SettingsPopper'
 
 const name = Array(10).fill(null).map(() => Math.floor(Math.random() * 10).toString()).join('')
 
 function Dashboard(props) {
     var classes = useStyles()
+    // eslint-disable-next-line
     const [gameID, setgameID] = useState("test1");
+    const [anchorEl, setAnchorEl] = React.useState(null)
     const [myCards, setMyCards] = useState([])
     const [blackCard, setBlackCard] = useState(false)
     const [userCards, setUserCards] = useState([])
@@ -58,6 +34,14 @@ function Dashboard(props) {
     const [userCardPlayed, setUserCardPlayed] = useState(false)
     const [myTurn, setMyTurn] = useState(false)
     const [playedCard, setPlayedCard] = useState([])
+    const open = Boolean(anchorEl)
+
+    const id = open ? 'add-section-popover' : undefined
+
+    const handleSideClick = event => {
+        setAnchorEl(open ? null : event.currentTarget)
+    }
+
     const flickityOptions = {
         adaptiveHeight: true,
         initialIndex: 0,
@@ -69,12 +53,10 @@ function Dashboard(props) {
         pageDots: false,
     }
 
-    function sendMessage() {
-
-    }
+    
 
       const handleClick = () => {
-        sendMessage()
+        
     }
     props.socket.on("dealWhite", setMyCards)
     props.socket.on("dealBlack", setBlackCard)
@@ -105,6 +87,7 @@ function Dashboard(props) {
     const playCard = (e, playedCard) => {
         e.preventDefault();
         setPlayedCard(playedCard)
+        // eslint-disable-next-line
         let newCards = myCards.filter(card => card != playedCard)
         setMyCards(newCards)
         props.socket.emit("playWhiteCard", playedCard, name, console.log)
@@ -123,9 +106,20 @@ function Dashboard(props) {
                 setUserCards(newCards)
             }, console.log)
         }
-    }, [playedCard]);
+    }, [playedCard, props.socket, userCardPlayed, userCards]);
 
     return (
+        <>
+                 <Fab
+                    color="primary"
+                    aria-label="settings"
+                    onClick={e => handleSideClick(e)}
+                    className={classes.settingsFab}
+                    style={{ zIndex: 100 }}
+                >
+                 <Icon path={SettingsIcon} size={1} color="#fff" />
+                </Fab>
+                <SettingsPopper id={id} open={open} anchorEl={anchorEl} />
         <Grid container justify="center" alignItems="center" spacing={2}>
             <Grid item lg={12} sm={12} xs={12}>
                 <Grid
@@ -143,7 +137,7 @@ function Dashboard(props) {
                             spacing={2}
                         >
                             <Grid item xs={12}>
-                                <div style={{ display: 'flex', textAlign: 'center', justifyContent: 'center', alignItems: "center",  margin: '0 auto' }}>
+                            <div style={{ display: 'flex', textAlign: 'center', justifyContent: 'center', alignItems: "center",  margin: '0 auto' }}>
                             <Button style={{ margin: 5 }} size="small" color="primary" variant="contained" onClick={() => newGame()}>New Game</Button>
                             <Button style={{ margin: 5 }} size="small" color="primary" variant="contained" onClick={() => joinGame()}>Join Game</Button>
                             <Button style={{ margin: 5 }} size="small" color="primary" variant="contained" onClick={() => startGame()}>Start Game</Button>
@@ -165,7 +159,7 @@ function Dashboard(props) {
                                     justifyContent="center"
                                 >
                                     <Chip
-                                        size="large"
+                                        size="medium"
                                         color="success"
                                         variant="outlined"
                                         avatar={
@@ -195,7 +189,7 @@ function Dashboard(props) {
                                     justifyContent="center"
                                 >
                                     <Chip
-                                        size="large"
+                                        size="medium"
                                         variant="outlined"
                                         color="warning"
                                         avatar={
@@ -329,6 +323,7 @@ function Dashboard(props) {
                 </Grid>
             </Grid>
         </Grid>
+        </>
     )
 }
 

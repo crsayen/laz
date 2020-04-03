@@ -8,7 +8,6 @@ import {
   TextField as Input
 } from "@material-ui/core";
 import { withRouter } from "react-router-dom";
-import { useSelector } from 'react-redux'
 // styles
 import useStyles from "./styles";
 

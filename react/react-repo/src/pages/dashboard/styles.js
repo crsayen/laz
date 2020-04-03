@@ -4,6 +4,15 @@ export default makeStyles(theme => ({
     button: {
         marginBottom: theme.spacing(2),
     },
+    settingsFab: {
+        position: "fixed",
+        top: theme.spacing(12),
+        right: 0,
+        zIndex: 1,
+        borderRadius: 0,
+        borderTopLeftRadius: "50%",
+        borderBottomLeftRadius: "50%"
+      },
     card: {
         minHeight: '100%',
         display: 'flex',
@@ -78,7 +87,7 @@ export default makeStyles(theme => ({
       // eslint-disable-next-line
       height: '85px'
     },
-    pos: {
+    pos2: {
         marginBottom: 5,
         overflow: 'auto',
         height: '100%',

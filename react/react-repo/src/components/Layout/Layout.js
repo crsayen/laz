@@ -1,5 +1,5 @@
 import React from 'react'
-import { Route, Switch, withRouter } from 'react-router-dom'
+import { Route, withRouter } from 'react-router-dom'
 import classnames from 'classnames'
 import useStyles from './styles'
 import Header from '../Header'

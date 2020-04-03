@@ -2,14 +2,8 @@ import React from "react";
 import { Grid, Paper } from "@material-ui/core";
 import { Link } from "react-router-dom";
 import classnames from "classnames";
-
-// styles
 import useStyles from "./styles";
-
-//components
 import { Button, Typography } from "../../components/Wrappers";
-
-// logo
 import logo from "./logo.svg";
 
 export default function Error() {
@@ -20,7 +14,7 @@ export default function Error() {
       <div className={classes.logotype}>
         <img className={classes.logotypeIcon} src={logo} alt="logo" />
         <Typography variant="h3" className={classes.logotypeText}>
-          Material Admin
+          Lazaretto
         </Typography>
       </div>
       <Paper classes={{ root: classes.paperRoot }}>

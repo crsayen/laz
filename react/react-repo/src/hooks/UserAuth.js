@@ -31,18 +31,15 @@ export default function useLoginHandler(history) {
         return instance.post("/api/user/signin/local", { email: login, password }, { username: login, password: password })
 
       }
-      //persistor.purge();
       AsyncFunc(login, password).then(res => {
         let user;
         const token = res.data.token;
-        const expire = res.data.expire
         user = jwt.decode(token).user;
         delete user.id;
         axios.defaults.headers.common["Authorization"] = "Bearer " + token;
         history.push('/app/dashboard')
       }).catch((error) => {
         console.log(error)
-  
         alert('Invalid username or password. Please try again.');
       })
     },
