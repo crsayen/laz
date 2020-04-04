@@ -19,6 +19,10 @@ app.use(
 const corsOptions = {
   origin: "localhost:3000"
 };
+const DECK = {
+  black: _.shuffle(deck.black),
+  white: _.shuffle(deck.white)
+}
 app.use(cors(corsOptions));
 app.use("/api/user", user);
 const server = require("http").createServer(app);
@@ -26,12 +30,7 @@ const io = require("socket.io")(server);
 server.listen(port, "0.0.0.0", () => {
   console.log(`listening on *:${port}`);
 });
-
 const MAX_PLAYERS = 10; // TODO: put in redis
-const DECK = {
-  black: _.shuffle(deck.black),
-  white: _.shuffle(deck.white)
-}; // TODO: every new game should have a shuffled deck
 client.flushall();
 client.on("error", e => console.error(e));
 var SOCKETS = new Map(); // TODO: put in redis
@@ -256,7 +255,7 @@ const addPlayer = (id, player, started, socket, callback) => {
       callback(false);
     } else {
       client.hset(`${id}:${player}`, "playedCards", "[]", handleRedisError);
-      client.hset(`${id}:${player}`, "numberOfCards", 0, handleRedisError);
+      client.hset(`${id}:${player}`, "cards", "[]", handleRedisError);
       SOCKETS.set(player, socket);
       socket.join(id, err => {
         if (err) {
@@ -277,58 +276,83 @@ const nextCzar = (id, callback) => {
   });
 };
 
-const drawCards = (filterfn, id, color, n, callback) => {
-  let _drawCards = (id, color, n, callback) => {
-    client.hincrby(`${id}:game`, `${color}Cursor`, n, (err, cursor) => {
-      handleRedisError(err);
-      if (cursor + n > DECK[color].length) {
-        callback(false);
-      }
-      callback(DECK[color].slice(cursor - n, cursor));
-    });
-  };
-  let f = (_n, _cards) => {
-    _drawCards(id, color, _n, cards => {
-      let filtered = _cards.concat(cards.filter(filterfn));
-      return filtered.length < n
-        ? f(n - filtered.length, filtered)
-        : callback(filtered);
+const _drawCards = (room, color, n, callback) => {
+  client.hincrby(`${room}:game`, `${color}Cursor`, n, (err, cursor) => {
+    handleRedisError(err);
+    callback(DECK[color].slice(cursor - n, cursor));
+  })
+};
+
+const drawCards = (filterfn, room, color, n, callback) => {
+  let f = (newN, oldCards) => {
+    _drawCards(room, color, newN, newCards => {
+      let filtered = oldCards.concat(newCards.filter(filterfn));
+      if (filtered.length < newN) return f(newN - filtered.length, filtered)
+      callback(filtered);
     });
   };
   f(n, []);
 };
 
-const nextRound = (id) => {
-  client.lrange(`${id}:players`, 0, -1, (err, players) => {
-    nextCzar(id, (czar) => {
-      io.to(id).emit('newCzar', czar)
-      drawCards(id, "black", 1, (_black) => {
-        const black = _black[0]
-        client.hset(`${id}:game`, 'pick', black.pick)
-        io.to(id).emit('dealBlack', black)
-        players.forEach(player => {
-          client.hget(`${id}:${player}`, 'numberOfCards', (numberOfCards) => {
-            drawCards(id, "white", 7 - numberOfCards, (cards) => {
-              let isCzar = (player === czar)
-              SOCKETS.get(player).emit("myTurn", isCzar)
-              if (!isCzar){
-                if (cards) {
-                  SOCKETS.get(player).emit("dealWhite", cards)
-                  return
-                }
-                io.to(id).emit("failure", {message: "Ran out of cards"})
-              }
-            })
-          })
-        })
+const wfilter = (card) => !card.text.includes('*')
+const bfilter = (card) => card.pick < 2
+
+const setPlayerCards = (room, player, cards, callback) => {
+  client.hset(`${room}:${player}`, "cards", JSON.stringify(
+      cards
+    ), (e,r) => {
+      handleRedisError(e)
+      callback ? callback(cards) : null
+    }
+  );
+}
+
+const getPlayerCards = (room, player, callback) => {
+  client.hget(`${room}:${player}`, "cards", (e,r) => {
+    handleRedisError(e)
+    callback
+      ? r 
+        ? callback(JSON.parse(r)) 
+        : callback(false)
+      : null
+  })
+}
+
+const dealWhiteCards = (room, player, callback) => {
+  getPlayerCards(room, player, (cards) => {
+    drawCards(wfilter, room, "white", 7 - cards.length, (newCards) => {
+      let cardsDealt = [...cards, ...newCards]
+      setPlayerCards(room, player, cardsDealt)
+      SOCKETS.get(player).emit("dealWhite", cardsDealt)
+      callback ? callback(cards) : null
+    })
+  })
+}
+
+const dealBlackCard = (room, callback) => {
+  drawCards(bfilter, room, "black", 1, (_black) => {
+    const black = _black[0]
+    client.hset(`${room}:game`, 'pick', black.pick)
+    io.to(room).emit('dealBlack', black)
+    callback ? callback(black) : null
+  })
+}
+
+const nextRound = (room) => {
+  client.lrange(`${room}:players`, 0, -1, (err, players) => {
+    handleRedisError(err)
+    nextCzar(room, (czar) => {
+      io.to(room).emit('newCzar', czar)
+      dealBlackCard(room)
+      players.forEach(player => {
+        SOCKETS.get(player).emit("myTurn", (player == czar))
+        dealWhiteCards(room, player)
       })
     })
   })
 }
 
 const handleRedisError = (err) => {
-  console.log("handleRedisError", err)
-  console.log(typeof(err))
   if (err instanceof Error) {
     console.error(err)
   }
