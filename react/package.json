@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "async-redis": "^1.1.7",
     "axios": "^0.19.2",
     "babel-node": "0.0.1-security",
     "bcrypt": "^4.0.1",

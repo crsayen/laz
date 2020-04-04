@@ -72,7 +72,7 @@ function Dashboard(props) {
     }
 
     useEffect(() => {
-        props.socket.on("dealWhite", setMyCards)
+        props.socket.on("dealWhite", doSetMyCards)
         props.socket.on("dealBlack", setBlackCard)
         props.socket.on("newCzar", setCzar)
         props.socket.on("myTurn", setMyTurn)
@@ -109,6 +109,11 @@ function Dashboard(props) {
         let newCards = myCards.filter(card => card != playedCard)
         setMyCards(newCards)
         props.socket.emit("playWhiteCard", playedCard, name, console.log)
+    }
+    const doSetMyCards = (cards) => {
+        console.log(cards)
+        let newCards = myCards.slice().concat(cards)
+        setMyCards(newCards)
     }
 
     const renderIf = (condition, component) => (

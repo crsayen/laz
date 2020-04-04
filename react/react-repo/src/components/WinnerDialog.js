@@ -13,7 +13,7 @@ import { Button } from '@material-ui/core';
 function WinnerDialog(props) {
   const { onClose, userName, cards, open } = props;
   const handleClose = () => {
-    onclose()
+    onClose()
   }
 
   const makeCard = (card) => (
