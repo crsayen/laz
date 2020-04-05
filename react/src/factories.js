@@ -4,8 +4,8 @@ const makeAddPlayer = (eventEmitter, dbAddPlayer, max) => (
   socket,
   callback
 ) =>
-  dbAddPlayer(room, player, max, result => {
-    callback(result)
+  dbAddPlayer(room, player, max, success => {
+    callback(success)
     if (result.success) {
       eventEmitter.addPlayerToRoom(socket, room, player)
       eventEmitter.toRoom(room, 'playerAdded', player)

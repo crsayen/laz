@@ -5,6 +5,28 @@ client.flushall();
 
 client.on("error", e => console.error(e));
 
+const redisNewRoom = (room, player, callback) =>
+  client.exists(`${id}:game`, exists => {
+    if (exists) {
+      callback(false)
+    } else {
+      client.hmset(
+        `${id}:game`,
+        "isPrivate",
+        0,
+        "blackCursor",
+        0,
+        "whiteCursor",
+        0,
+        "playedCards",
+        0,
+        "pick",
+        0,
+      )
+      callback(true)
+    }
+  })
+
 const redisAddPlayer = (room, player, max, callback) =>
   client.rpush(`${id}:players`, player, (err, len) => {
     if (len > max) {
@@ -59,7 +81,7 @@ const redisGetPlayerCards = (room, player, callback) =>
 const redisSetPick = (room, pick) =>
   client.hset(`${room}:${game}`, 'pick', pick)
 
-  const redisGetPick = (room, pick, callback) =>
+  const redisGetPick = (room, callback) =>
     client.hget(`${room}:game`, 'pick', pick =>
       callback(parseInt(pick))
     )
@@ -81,5 +103,7 @@ module.exports = {
   redisGetPlayerCards,
   redisSetPick,
   redisGetPick,
-  redisGetNextCzar
+  redisGetNextCzar,
+  redisGetPlayedCards, // TODO
+  redisSerPlayedCards // TODO
 }
