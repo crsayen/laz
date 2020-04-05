@@ -13,6 +13,18 @@ import {
   makeDealBlackCard,
   makeNextRound
 } from './factories'
+import {
+  redisAddPlayer,
+  redisGetPlayers,
+  redisSetPlayerReady,
+  redisCheckAllPlayersReady,
+  redisIncrementDeckCursor,
+  redisSetPlayerCards,
+  redisGetPlayerCards,
+  redisSetPick,
+  redisGetPick,
+  redisGetNextCzar
+} from './redisUtils'
 
 const port = 8080
 const app = require('express')()
@@ -39,9 +51,9 @@ const addPlayer = makeAddPlayer(
 )
 const nextCzar = makeNextCzar(redisGetNextCzar)
 const nextRound = makeNextRound(
-  redisdbGetPlayers,
+  redisGetPlayers,
   nextCzar,
-  eventEmitter,
+  socketioEventEmitter,
   dealWhiteCards,
   dealBlackCard,
   redisSetPlayerReady
@@ -55,12 +67,13 @@ const drawCards = makeDrawCards(deck, redisIncrementDeckCursor)
 const dealWhiteCards = makeDealWhiteCards(
   redisSetPlayerCards,
   redisGetPlayerCards,
-  socketioEventEmitter
+  socketioEventEmitter,
+  drawCards
 )
 const dealBlackCard = makeDealBlackCard(
-  redisSetPlayerCards,
-  redisGetPlayerCards,
-  socketioEventEmitter
+  socketioEventEmitter,
+  redisGetPick,
+  drawCards
 )
 
 app.use(cors(corsOptions))
@@ -73,13 +86,21 @@ server.listen(port, '0.0.0.0', () =>
 
 io.on('connection', socket => {
   // (room, player, callback)
-  socket.on('newGame', createNewGame)
+  socket.on('newGame', (room, player, callback) =>
+    createNewGame(room, player, socket, (success) =>
+      callback(success)
+    )
+  )
   // (room, password, callback)
   socket.on('makePrivate', setGameToPrivate)
   // (room, player, callback)
-  socket.on('joinGame', addPlayer)
+  socket.on('joinGame', (room, player, callback) =>
+    addPlayer(room, player, socket, success =>
+        callback(success)
+      )
+  )
   // (room, callback)
-  socket.on('startGame', startGame)
+  socket.on('startGame', nextRound)
   // (room, player, card)
   socket.on('playWhiteCard', playWhiteCard)
   // (room, player)
@@ -87,3 +108,17 @@ io.on('connection', socket => {
   // (room, card)
   socket.on('chooseWhiteCard', winningCardChosen)
 })
+
+const createNewGame = (room, player, socket, callback) =>
+  redisNewRoom(room, player, (success) =>
+    success
+      ? addPlayer(room, player, MAXPLAYERS, callback)
+      : callback(false)
+  )
+
+const playWhiteCard = (room, player, card) =>
+  redisGetPlayers(room, players =>
+    redisGetPick(room, pick => {
+      // TODO
+    })
+  )

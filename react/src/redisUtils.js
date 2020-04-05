@@ -51,8 +51,35 @@ const redisSetPlayerCards = (room, player, cards, callback) =>
   )
 
 
-const getPlayerCards = (room, player, callback) =>
+const redisGetPlayerCards = (room, player, callback) =>
   client.hget(`${room}:${player}`, 'cards', cardsString =>
     callback(JSON.parse(cardsString))
   )
 
+const redisSetPick = (room, pick) =>
+  client.hset(`${room}:${game}`, 'pick', pick)
+
+  const redisGetPick = (room, pick, callback) =>
+    client.hget(`${room}:game`, 'pick', pick =>
+      callback(parseInt(pick))
+    )
+
+const redisGetNextCzar = (room, callback) =>
+  client.lpop(`${room}:players`, czar =>
+    client.rpush(`${room}:players`, czar, () =>
+      callback(czar)
+    )
+  )
+
+module.exports = {
+  redisAddPlayer,
+  redisGetPlayers,
+  redisSetPlayerReady,
+  redisCheckAllPlayersReady,
+  redisIncrementDeckCursor,
+  redisSetPlayerCards,
+  redisGetPlayerCards,
+  redisSetPick,
+  redisGetPick,
+  redisGetNextCzar
+}
