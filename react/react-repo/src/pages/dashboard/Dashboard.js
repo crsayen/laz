@@ -21,6 +21,8 @@ import Divider from '@material-ui/core/Divider'
 import { socketConnect } from 'socket.io-react';
 import SettingsPopper from './components/SettingsPopper'
 import Swal from 'sweetalert2'
+// TODO: make it so that the winner dialog shows the black card's text (black bg)
+// with white card text filling in the blanks (whitebg)
 
 const name = Array(10).fill(null).map(() => Math.floor(Math.random() * 10).toString()).join('')
 
@@ -80,16 +82,20 @@ function Dashboard(props) {
 
     const handleWinnerDialogClose = () => {
         setWinnerDialogOpen(false)
+        setWinnerCards([{text:''}])
         props.socket.emit("ready", true)
     }
 
     useEffect(() => {
-        props.socket.on("dealWhite", setMyCards)
+        props.socket.on("dealWhite", doSetMyCards)
         props.socket.on("dealBlack", setBlackCard)
         props.socket.on("newCzar", setCzar)
         props.socket.on("myTurn", setMyTurn)
         props.socket.on('startgame', console.log)
-        props.socket.on('allCardsPlayed', () => setAllCardsPlayed(true))
+        props.socket.on('allCardsPlayed', () => {
+            console.log("all cards played")
+            setAllCardsPlayed(true)
+        })
         props.socket.on('winnerSelected', (user, cards) => {
             setAllCardsPlayed(false)
             setWinnerName(user)
@@ -119,6 +125,15 @@ function Dashboard(props) {
         setMyCards(newCards)
         props.socket.emit("playWhiteCard", playedCard, name, console.log)
     }
+    const doSetMyCards = (cards) => {
+        console.log(cards)
+        let newCards = myCards.slice().concat(cards)
+        setMyCards(newCards)
+    }
+
+    const renderIf = (condition, component) => (
+        (condition) ? component : <></>
+    )
 
     return (
         <>
@@ -214,20 +229,19 @@ function Dashboard(props) {
                         </Grid>
                         </Grid>
                         <Grid item xs={12}>
-                        {blackCard ? (
-                            <>
-                            <Card className={classes.blackcard}>
-                                <CardContent>
-                                    <Typography
-                                        className={classes.pos2}
-                                        color="textSecondary"
-                                    >
-                                        {blackCard.text}
-                                    </Typography>
-                                </CardContent>
-                            </Card>
-                        </>
-                        ) : (<></>)}
+                            {renderIf(
+                                blackCard,
+                                (<Card className={classes.blackcard}>
+                                    <CardContent>
+                                        <Typography
+                                            className={classes.pos2}
+                                            color="textSecondary"
+                                        >
+                                            {blackCard.text}
+                                        </Typography>
+                                    </CardContent>
+                                </Card>)
+                            )}
                         </Grid>
 
                     <Grid item lg={12} sm={12} xs={12}>
@@ -257,27 +271,29 @@ function Dashboard(props) {
                                         </CardContent>
                                         <Divider variant="middle" />
                                         <CardActions>
-                                            <Chip
-                                                color="info"
-                                                colorBrightness={'light'}
-                                                avatar={
-                                                    <Avatar color="info">
-                                                        {data.user.charAt(0).toUpperCase()}
-                                                    </Avatar>
-                                                }
-                                                className={classes.userchip}
-                                                label={data.user}
-                                                onClick={handleClick}
-                                            />
-                                            {myTurn && allCardsPlayed ? (
-                                            <Chip
-                                            color="success"
-                                            colorBrightness={'light'}
-                                            className={classes.userchip}
-                                            label='Select'
-                                            onClick={() => selectCard(data)}
-                                        />
-                                            ) : (<></>)}
+                                            {renderIf(!myTurn,
+                                                <Chip
+                                                    color="info"
+                                                    colorBrightness={'light'}
+                                                    avatar=
+                                                        {<Avatar color="info">
+                                                            {data.user.charAt(0).toUpperCase()}
+                                                        </Avatar>}
+                                                    className={classes.userchip}
+                                                    label={data.user}
+                                                    onClick={handleClick}
+                                                />
+                                            )}
+                                            {renderIf(
+                                                myTurn && allCardsPlayed,
+                                                (<Chip
+                                                    color="success"
+                                                    colorBrightness={'light'}
+                                                    className={classes.userchip}
+                                                    label='Select'
+                                                    onClick={() => selectCard(data)}
+                                                />)
+                                            )}
                                         </CardActions>
                                     </Card>
                                 ))}
@@ -310,14 +326,17 @@ function Dashboard(props) {
                                             </Typography>
                                         </CardContent>
                                         <Divider variant="middle" />
-                                        <CardActions>
-                                            <Chip
-                                                color="secondary"
-                                                className={classes.userchip}
-                                                label="Play Card"
-                                                onClick={(e) => playCard(e, card)}
-                                            />
-                                        </CardActions>
+                                        {renderIf(
+                                            !myTurn && !allCardsPlayed,
+                                            (<CardActions>
+                                                <Chip
+                                                    color="secondary"
+                                                    className={classes.userchip}
+                                                    label="Play Card"
+                                                    onClick={(e) => playCard(e, card)}
+                                                />
+                                            </CardActions>)
+                                        )}
                                     </Card>
                                 ))}
                             </Flickity>

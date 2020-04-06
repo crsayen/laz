@@ -8,14 +8,19 @@
     "build": "babel src --out-dir build",
     "start": "npm run build && NODE_ENV=production node ./build/index.js"
   },
+  "resolutions": {
+    "@babel/preset-env": "7.5.5"
+   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "async-redis": "^1.1.7",
     "axios": "^0.19.2",
     "babel-node": "0.0.1-security",
     "bcrypt": "^4.0.1",
     "body-parser": "^1.18.3",
+    "concurrently": "^5.1.0",
     "cors": "^2.8.5",
     "express": "^4.16.4",
     "flickity": "^2.2.1",
