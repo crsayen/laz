@@ -18,7 +18,13 @@ import {Typography} from '../../components/Wrappers'
 import ListItemText from '@material-ui/core/ListItemText';
 import useStyles from './styles'
 import ListItemIcon from '@material-ui/core/ListItemIcon';
+import ListItemSecondaryAction from '@material-ui/core/ListItemSecondaryAction';
 import Container from '@material-ui/core/Container';
+import PlayCircleFilledIcon from '@material-ui/icons/PlayCircleFilled';
+import SportsEsportsIcon from '@material-ui/icons/SportsEsports';
+import AccountCircleIcon from '@material-ui/icons/AccountCircle';
+import ListItemAvatar from '@material-ui/core/ListItemAvatar';
+import Avatar from '@material-ui/core/Avatar';
 import { Add as AddSectionIcon } from '@material-ui/icons'
 import { Button } from "../Wrappers";
 import {
@@ -97,8 +103,10 @@ function Sidebar() {
     const [value, setValue] = React.useState(0);
     var [isOpen, setIsOpen] = useState(false);
     var [isCreateOpen, setIsCreateOpen] = useState(false);
+    var [isJoinGameOpen, setJoinGameOpen] = useState(false);
     const [anchorEl, setAnchorEl] = React.useState(null);
     const [anchorElTwo, setAnchorElTwo] = React.useState(null);
+    const [anchorElThree, setAnchorElThree] = React.useState(null);
     var [isPermanent, setPermanent] = useState(true)
 
     var { isSidebarOpened } = useLayoutState()
@@ -107,6 +115,8 @@ function Sidebar() {
     function joinGameClick(event) { setIsOpen(true); setAnchorEl(event.currentTarget); }
     const joinGameClose = () => { setIsOpen(false); setAnchorEl(null); };
     const createGameClose = () => { setIsCreateOpen(false); setAnchorElTwo(null); };
+    function joinGame(event) { setJoinGameOpen(true); setAnchorElThree(event.currentTarget); }
+    const joinGameCloseTwo = () => { setJoinGameOpen(false); setAnchorElThree(null); };
     const handleChange = (event, newValue) => { setValue(newValue); };
     const handleChangeIndex = (index) => { setValue(index); };
 
@@ -183,7 +193,7 @@ function Sidebar() {
           aria-label="full width tabs example"
         >
           <Tab label="Main" {...a11yProps(0)} />
-          <Tab label="Game" {...a11yProps(1)} />
+          <Tab label="Games" {...a11yProps(1)} />
         </Tabs>
       </AppBar>
       <SwipeableViews
@@ -299,6 +309,9 @@ function Sidebar() {
         <List className={classes.list} dense>
         {userList.map(data => (
                 <ListItem key={data.name} button dense>
+                     <ListItemAvatar>
+                      <AccountCircleIcon />
+                  </ListItemAvatar>
                   <ListItemText
                     primary={data.name}
                     secondary={`Score: ${data.score}`}
@@ -311,16 +324,59 @@ function Sidebar() {
         <TabPanel value={value} index={1} dir={theme.direction}>
         <Container classes={{ root: classes.controot }}>
         <div className={classes.demo}>
-            <List className={classes.list}  dense>
+            <List className={classes.list} dense>
               {gameList.map(data => (
                 <ListItem key={data.name} button>
+                <ListItemAvatar>
+                    <Avatar>
+                      <SportsEsportsIcon />
+                      </Avatar>
+                  </ListItemAvatar>
                   <ListItemText
                     primary={data.name}
                     secondary={`Owner: ${data.leader} Players: ${data.players}`}
                   />
+                  <ListItemSecondaryAction>
+                    <IconButton edge="end" aria-label="Join Game" onClick={joinGame}>
+                      <PlayCircleFilledIcon />
+                    </IconButton>
+                  </ListItemSecondaryAction>
                 </ListItem>
              ))}
             </List>
+            <Popover
+          open={isJoinGameOpen}
+          anchorEl={anchorElThree}
+          onClose={joinGameCloseTwo}
+          anchorOrigin={{
+            vertical: "bottom",
+            horizontal: "left"
+          }}
+          transformOrigin={{
+            vertical: "top",
+            horizontal: "left"
+          }}
+          classes={{ paper: classes2.popover }}
+        >
+          <Box m={3} display="flex" flexDirection="column">
+            <Typography>Join Game ?</Typography>
+            <Box display="flex" justifyContent="flex-end" mt={2}>
+              <Button
+                color="secondary"
+                variant="contained"
+                className={classes2.noBoxShadow}
+              >
+                Join
+              </Button>
+              <Button
+                classes={{ label: classes2.buttonLabel }}
+                onClick={joinGameCloseTwo}
+              >
+                Cancel
+              </Button>
+            </Box>
+          </Box>
+        </Popover>
           </div>
             </Container>
         </TabPanel>
