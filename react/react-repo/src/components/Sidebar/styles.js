@@ -28,11 +28,19 @@ export default makeStyles(theme => ({
       duration: theme.transitions.duration.leavingScreen
     }),
     overflowX: "hidden",
-    width: theme.spacing(7) + 40,
+    width: 0,
     [theme.breakpoints.down("sm")]: {
       width: drawerWidth
     }
   },
+ controot: {
+   paddingRight: 0,
+   paddingLeft: 0,
+   '@media (min-width: 600px)': {
+    paddingRight: 0,
+    paddingLeft: 0
+  }
+ },
   toolbar: {
     ...theme.mixins.toolbar,
     [theme.breakpoints.down("sm")]: {
@@ -56,19 +64,18 @@ export default makeStyles(theme => ({
       display: "none"
     }
   },
+  list: {
+    overflow: 'auto',
+      maxHeight: "20%",
+  },
   mycard: {
-    padding: '6px',
+    padding: '1px',
     margin: '0 auto',
-    
+    height: '100%',
+    maxHeight: '65px',
+    minHeight: '65px',
+    marginBottom: '6px',
       borderRadius: '13px',
-      // eslint-disable-next-line
-      width: 'intrinsic' /* Safari/WebKit uses a non-standard name */,
-      // eslint-disable-next-line
-      width: '-moz-max-content' /* Firefox/Gecko */,
-      // eslint-disable-next-line
-      width: '-webkit-max-content' /* Chrome */,
-      // eslint-disable-next-line
-      width: 'max-content',
   },
   popover: {
     backgroundColor: theme.palette.primary.main,
@@ -79,13 +86,10 @@ export default makeStyles(theme => ({
     height: 34
   },
   pos: {
-    marginBottom: 1,
-    overflow: 'auto',
-    height: '100%',
-    bottom: 0,
+    margin: "0 auto",
   width: '145px',
   // eslint-disable-next-line
-  height: '95px'
+  height: '29px'
 },
   noBoxShadow: {
     boxShadow: "none !important",

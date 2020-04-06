@@ -78,6 +78,16 @@ export default makeStyles(theme => ({
         // eslint-disable-next-line
         width: 'max-content',
     },
+    controot: {
+        paddingRight: 0,
+        paddingLeft: 0,
+        marginTop: '5px',
+        marginBottom: '5px',
+        '@media (min-width: 600px)': {
+         paddingRight: 0,
+         paddingLeft: 0
+       }
+      },
     playedcardCont: {
         padding: '5px',
         maxHeight: 'max-content',
@@ -94,7 +104,8 @@ export default makeStyles(theme => ({
     },
     pos: {
         marginBottom: 1,
-        overflow: 'auto',
+        'overflow-y': 'auto',
+        'touch-action': 'pan-y',
         height: '100%',
         bottom: 0,
       width: '145px',
@@ -104,9 +115,9 @@ export default makeStyles(theme => ({
     pos2: {
         marginBottom: 1,
         padding: 1,
-        overflow: 'auto',
+        'overflow-y': 'auto',
+        'touch-action': 'pan-y',
         bottom: 0,
-      //width: 'auto',
       // eslint-disable-next-line
       minWidth: '50%',
       height: '85px',

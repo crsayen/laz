@@ -1,15 +1,13 @@
 // eslint-disable-next-line
 import React, { useState, useEffect } from 'react'
 // eslint-disable-next-line
-import { Grid, Paper, Box, Fab, } from '@material-ui/core'
+import { Grid, Box, Fab, } from '@material-ui/core'
 import Icon from '@mdi/react'
 import { mdiSettings as SettingsIcon } from '@mdi/js'
 // eslint-disable-next-line
 import axios from 'axios'
 import useStyles from './styles'
 // eslint-disable-next-line
-import Widget from '../../components/Widget'
-import WinnerDialog from '../../components/WinnerDialog'
 import Flickity from 'react-flickity-component'
 import 'flickity/css/flickity.css'
 // eslint-disable-next-line
@@ -21,6 +19,7 @@ import Divider from '@material-ui/core/Divider'
 import { socketConnect } from 'socket.io-react';
 import SettingsPopper from './components/SettingsPopper'
 import Swal from 'sweetalert2'
+import Container from '@material-ui/core/Container';
 // TODO: make it so that the winner dialog shows the black card's text (black bg)
 // with white card text filling in the blanks (whitebg)
 
@@ -32,12 +31,14 @@ function Dashboard(props) {
     const [winnerName, setWinnerName] = useState('')
     const [allCardsPlayed, setAllCardsPlayed] = useState(false)
     const [winnerCards, setWinnerCards] = useState([{text:''}])
+    // eslint-disable-next-line
     const [gameID, setgameID] = useState("test1");
     const [anchorEl, setAnchorEl] = React.useState(null)
     const [myCards, setMyCards] = useState([])
     const [blackCard, setBlackCard] = useState(false)
     const [_userCard, _setUserCard] = useState([])
     const [userCards, setUserCards] = useState([])
+    // eslint-disable-next-line
     const [userCardPlayed, setUserCardPlayed] = useState(false)
     const [czar, setCzar] = useState('Waiting')
     const [myTurn, setMyTurn] = useState(false)
@@ -67,8 +68,8 @@ function Dashboard(props) {
         adaptiveHeight: true,
         initialIndex: 0,
         freeScroll: true,
-        freeScrollFriction: 0.03,
         contain: true,
+        draggable: true,
         //wrapAround: true,
         imagesLoaded: true,
         pageDots: false,
@@ -79,7 +80,7 @@ function Dashboard(props) {
       const handleClick = () => {
 
     }
-
+// eslint-disable-next-line
     const handleWinnerDialogClose = () => {
         setWinnerDialogOpen(false)
         setWinnerCards([{text:''}])
@@ -106,14 +107,15 @@ function Dashboard(props) {
             setUserCardPlayed(true)
             _setUserCard(card)
         })
-    },[])
+    },[]) // eslint-disable-line
+
     useEffect(() => {
         let newCards = userCards.slice().concat(_userCard)
         setUserCards(newCards)
-    },[_userCard])
+    },[_userCard]) // eslint-disable-line
     useEffect(() => {
         setWinnerDialogOpen(!!winnerCards[0].text)
-    }, [winnerCards])
+    }, [winnerCards]) // eslint-disable-line
 
     const newGame = () => props.socket.emit('newGame', gameID, name, console.log)
     const joinGame = () => props.socket.emit('joinGame', gameID, name, console.log)
@@ -121,6 +123,7 @@ function Dashboard(props) {
     const selectCard = (card) => props.socket.emit("chooseWhiteCard", card, console.log)
     const playCard = (e, playedCard) => {
         e.preventDefault();
+        // eslint-disable-next-line
         let newCards = myCards.filter(card => card != playedCard)
         setMyCards(newCards)
         props.socket.emit("playWhiteCard", playedCard, name, console.log)
@@ -254,7 +257,9 @@ function Dashboard(props) {
                         >
                             Cards in Play
                         </Typography>
-                        <div className="carousel-holder">
+                        <Container
+                        classes={{ root: classes.controot }} >
+                        <div className="carousel-holder" >
                             <Flickity options={flickityOptions} reloadOnUpdate>
                                 {userCards.map(data => (
                                     <Card
@@ -299,6 +304,7 @@ function Dashboard(props) {
                                 ))}
                             </Flickity>
                         </div>
+                        </Container>
                     </Grid>
                     <Grid item lg={12} sm={12} xs={12}>
                         <Divider variant="middle" />
@@ -310,7 +316,9 @@ function Dashboard(props) {
                         >
                             Your Cards
                         </Typography>
-                        <div className="carousel-holder">
+                        <Container
+                        classes={{ root: classes.controot }} >
+                        <div className="carousel-holder" >
                             <Flickity options={flickityOptions} reloadOnUpdate>
                                 {myCards.map(card => (
                                     <Card
@@ -325,22 +333,26 @@ function Dashboard(props) {
                                                 {card.text}
                                             </Typography>
                                         </CardContent>
-                                        <Divider variant="middle" />
+                                        
                                         {renderIf(
                                             !myTurn && !allCardsPlayed,
-                                            (<CardActions>
+                                            (
+                                                <>
+                                            <Divider variant="middle" />
+                                            <CardActions>
                                                 <Chip
                                                     color="secondary"
                                                     className={classes.userchip}
                                                     label="Play Card"
                                                     onClick={(e) => playCard(e, card)}
                                                 />
-                                            </CardActions>)
+                                            </CardActions></>)
                                         )}
                                     </Card>
                                 ))}
                             </Flickity>
                         </div>
+                        </Container>
                     </Grid>
                 </Grid>
             </Grid>

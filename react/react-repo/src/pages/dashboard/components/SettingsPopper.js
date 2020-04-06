@@ -13,7 +13,7 @@ function SettingsPopper({ open, id, anchorEl, newGame, joinGame, startGame, }) {
       id={id}
       open={open}
       anchorEl={anchorEl}
-      placement={"left-start"}
+      placement={"left-start"} 
       style={{ zIndex: 100 }}
       elevation={4}
     >

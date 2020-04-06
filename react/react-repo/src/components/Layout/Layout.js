@@ -6,7 +6,6 @@ import Header from '../Header'
 import Sidebar from '../Sidebar'
 import Dashboard from '../../pages/dashboard'
 import { useLayoutState } from '../../context/LayoutContext'
-import structure from '../Sidebar/SidebarStructure'
 import { SocketProvider } from 'socket.io-react';
 import io from 'socket.io-client';
 
@@ -30,7 +29,7 @@ function Layout(props) {
     return (
         <div className={classes.root}>
             <Header history={props.history} />
-            <Sidebar structure={structure} />
+            <Sidebar />
             <div
                 className={classnames(classes.content, {
                     [classes.contentShift]: layoutState.isSidebarOpened,

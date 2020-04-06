@@ -8,7 +8,7 @@ export default makeStyles(theme => ({
   },
   content: {
     flexGrow: 1,
-    padding: 32,
+    padding: 15,
     paddingTop: 10,
     width: `calc(100vw - 240px)`,
     minHeight: "100vh"

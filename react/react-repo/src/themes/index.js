@@ -1,6 +1,5 @@
 import defaultTheme from "./default";
 
-
 import { createMuiTheme } from "@material-ui/core";
 
 const overrides = {
@@ -48,6 +47,15 @@ const overrides = {
         backgroundColor: "#4A4A4A1A"
       }
     },
+    MuiTab: {
+      root: {
+        width: "50%",
+        minWidth: "150px",
+        '@media (min-width: 600px)': {
+          minWidth: "50%"
+        }
+      },
+    },
     MuiMenu: {
       paper: {
         backgroundColor: "#ECECEC",
@@ -63,15 +71,15 @@ const overrides = {
     MuiListItem: {
       root: {
         "&$selected": {
-          backgroundColor: "#F3F5FF !important",
+          backgroundColor: "#d9d9d9 !important",
           "&:focus": {
-            backgroundColor: "#F3F5FF"
+            backgroundColor: "#d9d9d9"
           }
         }
       },
       button: {
         "&:hover, &:focus": {
-          backgroundColor: "#F3F5FF"
+          backgroundColor: "#d9d9d9"
         }
       }
     },
