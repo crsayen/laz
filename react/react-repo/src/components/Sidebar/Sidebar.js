@@ -108,7 +108,6 @@ function Sidebar() {
     const [anchorElTwo, setAnchorElTwo] = React.useState(null);
     const [anchorElThree, setAnchorElThree] = React.useState(null);
     var [isPermanent, setPermanent] = useState(true)
-
     var { isSidebarOpened } = useLayoutState()
     var layoutDispatch = useLayoutDispatch()
     function createGameClick(event) { setIsCreateOpen(true); setAnchorElTwo(event.currentTarget); }
@@ -190,7 +189,7 @@ function Sidebar() {
           indicatorColor="primary"
           textColor="primary"
           variant="fullWidth"
-          aria-label="full width tabs example"
+          aria-label="Sidebar Tabs"
         >
           <Tab label="Main" {...a11yProps(0)} />
           <Tab label="Games" {...a11yProps(1)} />
@@ -277,7 +276,7 @@ function Sidebar() {
           classes={{ paper: classes2.popover }}
         >
           <Box m={3} display="flex" flexDirection="column">
-            <Typography>Create Game</Typography>
+            <Typography>New Game</Typography>
             <Input
               placeholder="Game Name"
               classes={{ root: classes2.input }}
