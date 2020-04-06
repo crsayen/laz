@@ -1,12 +1,15 @@
 import React, { useState } from "react";
 import {
+  Box,
   Collapse,
   Divider,
   List,
   ListItem,
   ListItemIcon,
   ListItemText,
-  Typography
+  Typography,
+  Popover,
+  TextField as Input,
 } from "@material-ui/core";
 import {
   Inbox as InboxIcon,
@@ -14,13 +17,11 @@ import {
 } from "@material-ui/icons";
 import { Link } from "react-router-dom";
 import classnames from "classnames";
-
-// styles
+import Chat from "../../../Chat";
 import useStyles from "./styles";
-
-// components
+import useStyles2 from "../../styles";
 import Dot from "../Dot";
-import { Badge } from "../../../Wrappers";
+import { Button, Badge } from "../../../Wrappers";
 
 export default function SidebarLink({
   link,
@@ -35,14 +36,10 @@ export default function SidebarLink({
   click,
   ...props
 }) {
-  // local
   var [isOpen, setIsOpen] = useState(false);
-  // Add Section Popover state
-  // eslint-disable-next-line
   const [anchorEl, setAnchorEl] = React.useState(null);
-  // Chat Modal state
+  const [isChat, setChat] = useState(false);
 
-  // Login page onClick
   function onLogin() {
     localStorage.removeItem("token");
     window.location.reload();
@@ -51,6 +48,7 @@ export default function SidebarLink({
   onLogin.clickName = "onLogin";
 
   var classes = useStyles(isOpen);
+  const classes2 = useStyles2();
   var isLinkActive =
     link && (location.pathname === link || location.pathname.includes(link));
 
@@ -69,11 +67,26 @@ export default function SidebarLink({
 
   if (type === "margin") return <section style={{ marginTop: 240 }} />;
 
-  // Add Section Popover
+  const open = Boolean(anchorEl);
+  const id = open ? "add-section-popover" : undefined;
 
   function addSectionClick(event) {
     setAnchorEl(event.currentTarget);
   }
+
+  const addSectionClose = () => {
+    setAnchorEl(null);
+  };
+
+  function chatSetOpen() {
+    setChat(true);
+  }
+
+  chatSetOpen.clickName = "chatSetOpen";
+
+  const chatSetClose = () => {
+    setChat(false);
+  };
 
   addSectionClick.clickName = "addSectionClick";
 
@@ -83,7 +96,7 @@ export default function SidebarLink({
         <ListItem
           onClick={e => {
             if (click) {
-              return click(e, addSectionClick, onLogin);
+              return click(e, addSectionClick, chatSetOpen, onLogin);
             }
             return toggleDrawer(e);
           }}
@@ -118,6 +131,45 @@ export default function SidebarLink({
             primary={label}
           />
         </ListItem>
+        <Chat open={isChat} onClose={chatSetClose} />
+        <Popover
+          id={id}
+          open={open}
+          anchorEl={anchorEl}
+          onClose={addSectionClose}
+          anchorOrigin={{
+            vertical: "bottom",
+            horizontal: "left"
+          }}
+          transformOrigin={{
+            vertical: "top",
+            horizontal: "left"
+          }}
+          classes={{ paper: classes2.popover }}
+        >
+          <Box m={3} display="flex" flexDirection="column">
+            <Typography>Join Game</Typography>
+            <Input
+              placeholder="Game Name"
+              classes={{ root: classes2.input }}
+            />
+            <Box display="flex" justifyContent="flex-end" mt={2}>
+              <Button
+                color="secondary"
+                variant="contained"
+                className={classes2.noBoxShadow}
+              >
+                Join
+              </Button>
+              <Button
+                classes={{ label: classes2.buttonLabel }}
+                onClick={addSectionClose}
+              >
+                Cancel
+              </Button>
+            </Box>
+          </Box>
+        </Popover>
       </>
     );
 

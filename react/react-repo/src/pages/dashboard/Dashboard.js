@@ -20,6 +20,7 @@ import CardContent from '@material-ui/core/CardContent'
 import Divider from '@material-ui/core/Divider'
 import { socketConnect } from 'socket.io-react';
 import SettingsPopper from './components/SettingsPopper'
+import Swal from 'sweetalert2'
 
 const name = Array(10).fill(null).map(() => Math.floor(Math.random() * 10).toString()).join('')
 
@@ -44,6 +45,20 @@ function Dashboard(props) {
 
     const handleSideClick = event => {
         setAnchorEl(open ? null : event.currentTarget)
+    }
+
+    if (winnderDialogOpen) {
+        Swal.fire({
+          title: `${winnerName} Won!`,    
+          text: winnerCards,
+          icon: 'success',
+          timer: 2000,
+          width: '20rem',
+          showCancelButton: false,
+          confirmButtonText: 'Ok',
+        }).then(() => {
+            setWinnerDialogOpen(false)
+        })
     }
 
     const flickityOptions = {
@@ -118,12 +133,6 @@ function Dashboard(props) {
                 </Fab>
                 <SettingsPopper id={id} open={open} anchorEl={anchorEl} newGame={newGame} joinGame={joinGame} startGame={startGame}/>
         <Grid container justify="center" alignItems="center" spacing={2}>
-                <WinnerDialog
-                    onClose={handleWinnerDialogClose}
-                    userName={winnerName}
-                    cards={winnerCards}
-                    open={winnderDialogOpen}
-                />
             <Grid item lg={12} sm={12} xs={12}>
                 <Grid
                     container

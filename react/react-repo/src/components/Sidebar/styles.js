@@ -1,6 +1,6 @@
 import { makeStyles } from "@material-ui/styles";
 
-const drawerWidth = 240;
+const drawerWidth = 300;
 
 export default makeStyles(theme => ({
   menuButton: {
@@ -56,6 +56,20 @@ export default makeStyles(theme => ({
       display: "none"
     }
   },
+  mycard: {
+    padding: '6px',
+    margin: '0 auto',
+    
+      borderRadius: '13px',
+      // eslint-disable-next-line
+      width: 'intrinsic' /* Safari/WebKit uses a non-standard name */,
+      // eslint-disable-next-line
+      width: '-moz-max-content' /* Firefox/Gecko */,
+      // eslint-disable-next-line
+      width: '-webkit-max-content' /* Chrome */,
+      // eslint-disable-next-line
+      width: 'max-content',
+  },
   popover: {
     backgroundColor: theme.palette.primary.main,
     color: "#fff"
@@ -64,6 +78,15 @@ export default makeStyles(theme => ({
     width: 36,
     height: 34
   },
+  pos: {
+    marginBottom: 1,
+    overflow: 'auto',
+    height: '100%',
+    bottom: 0,
+  width: '145px',
+  // eslint-disable-next-line
+  height: '95px'
+},
   noBoxShadow: {
     boxShadow: "none !important",
     marginRight: theme.spacing(1)
