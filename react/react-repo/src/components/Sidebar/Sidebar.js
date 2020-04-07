@@ -53,7 +53,7 @@ const userList = [
     { name: 'AlexC1', score: "6" },
     { name: 'ChrisS1', score: "3" },
     { name: 'AustinH3', score: "4" },
-    
+
     ]
 
 function TabPanel(props) {
@@ -74,27 +74,27 @@ function TabPanel(props) {
       </Container>
     );
   }
-  
+
   TabPanel.propTypes = {
     children: PropTypes.node,
     index: PropTypes.any.isRequired,
     value: PropTypes.any.isRequired,
   };
-  
+
   function a11yProps(index) {
     return {
       id: `full-width-tab-${index}`,
       'aria-controls': `full-width-tabpanel-${index}`,
     };
   }
-  
+
   const useStyles2 = makeStyles((theme) => ({
     root: {
       width: '100%',
     },
   }));
 
-  
+
 
 function Sidebar() {
     var classes = useStyles()
@@ -205,7 +205,7 @@ function Sidebar() {
                 className={classes.sidebarList}
                 classes={{ padding: classes.padding }}
             >
-         <ListItem 
+         <ListItem
          button
          onClick={createGameClick}
          >
@@ -214,7 +214,7 @@ function Sidebar() {
           </ListItemIcon>
           <ListItemText primary="Create A New Game" />
         </ListItem>
-        <ListItem 
+        <ListItem
         button
         onClick={joinGameClick}
         >

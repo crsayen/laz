@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Route, withRouter } from 'react-router-dom'
 import classnames from 'classnames'
 import useStyles from './styles'
@@ -10,21 +10,93 @@ import { SocketProvider } from 'socket.io-react';
 import io from 'socket.io-client';
 
 
+const name = Array(10)
+    .fill(null)
+    .map(() => Math.floor(Math.random() * 10).toString())
+    .join('')
 
+const socket = io.connect('localhost:8080');
 
 function Layout(props) {
     const classes = useStyles()
-    const socket = io.connect('localhost:8080');
-    // const testSockets = Array(4).fill(null).map(() => io.connect('localhost:8080'))
-    // testSockets.forEach((testSocket) => {
-    //   testSocket.on('connect', () => console.log("socket:", testSocket.id))
-    // })
-    socket.on('connect', () => console.log("socket:", socket.id));
-    // socket.emit("startGame", "testGame2", (success) => {
-    //   console.log(success)
-    // })
-    // global
     var layoutState = useLayoutState()
+
+/********************************************************************** */
+//    GAME STUFF
+/********************************************************************** */
+
+    const [winnerName, setWinnerName] = useState('')
+    const [allCardsPlayed, setAllCardsPlayed] = useState(false)
+    const [winnerCards, setWinnerCards] = useState([{ text: '' }])
+    const [gameID, setgameID] = useState('test1')
+    const [myCards, setMyCards] = useState([])
+    const [blackCard, setBlackCard] = useState(false)
+    const [_userCard, _setUserCard] = useState([])
+    const [userCards, setUserCards] = useState([])
+    const [userCardPlayed, setUserCardPlayed] = useState(false)
+    const [czar, setCzar] = useState('Waiting')
+    const [myTurn, setMyTurn] = useState(false)
+
+    useEffect(() => {
+        let newCards = userCards.slice().concat(_userCard)
+        setUserCards(newCards)
+    }, [_userCard]) // eslint-disable-line
+
+    const newGame = () => {
+        socket.emit('newGame', gameID, name, console.log)
+    }
+
+    const joinGame = () => {
+        socket.emit('joinGame', gameID, name, console.log)
+    }
+
+    const startGame = () => {
+        socket.emit('startGame', gameID, console.log)
+    }
+
+    const selectCard = card => {
+        socket.emit('chooseWhiteCard', card, console.log)
+    }
+
+    const playCard = (e, playedCard) => {
+        e.preventDefault()
+        // eslint-disable-next-line
+        let newCards = myCards.slice().filter(card => card != playedCard)
+        setMyCards(newCards)
+        socket.emit('playWhiteCard', playedCard, name, console.log)
+    }
+
+    const doSetMyCards = cards => {
+        console.log('myCards', myCards)
+        console.log('newcards', cards)
+        let newCards = cards
+        setMyCards(newCards)
+    }
+
+    useEffect(() => {
+        socket.on('connect', () => console.log("socket:", socket.id));
+        socket.on('dealWhite', doSetMyCards)
+        socket.on('dealBlack', setBlackCard)
+        socket.on('newCzar', setCzar)
+        socket.on('myTurn', setMyTurn)
+        socket.on('startgame', console.log)
+        socket.on('allCardsPlayed', () => {
+            console.log('all cards played')
+            setAllCardsPlayed(true)
+        })
+        socket.on('winnerSelected', (user, cards) => {
+            setAllCardsPlayed(false)
+            setWinnerName(user)
+            setUserCards([])
+            setWinnerCards(cards)
+        })
+        socket.on('whiteCardPlayed', card => {
+            setUserCardPlayed(true)
+            _setUserCard(card)
+        })
+    }, []) // eslint-disable-line
+
+/*********************************************************************** */
 
     return (
         <div className={classes.root}>
@@ -39,8 +111,29 @@ function Layout(props) {
                 <SocketProvider
                   socket={socket}
                 >
-                    <Route path="/app/dashboard" render={(props) => <Dashboard {...props} /> }/>
-                    </SocketProvider>
+                    <Route path="/app/dashboard" render={
+                        (props) =>
+                            <Dashboard
+                                winnerName={winnerName}
+                                allCardsPlayed={allCardsPlayed}
+                                winnerCards={winnerCards}
+                                gameID={gameID}
+                                myCards={myCards}
+                                blackCard={blackCard}
+                                userCards={userCards}
+                                userCardPlayed={userCardPlayed}
+                                czar={czar}
+                                myTurn={myTurn}
+                                newGame={newGame}
+                                joinGame={joinGame}
+                                startGame={startGame}
+                                selectCard={selectCard}
+                                playCard={playCard}
+                                {...props}
+                            />
+                        }
+                    />
+                </SocketProvider>
             </div>
         </div>
     )

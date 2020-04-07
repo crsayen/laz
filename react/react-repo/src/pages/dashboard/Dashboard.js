@@ -26,54 +26,21 @@ import { socketConnect } from 'socket.io-react'
 import SettingsPopper from './components/SettingsPopper'
 import Swal from 'sweetalert2'
 import Container from '@material-ui/core/Container'
-// TODO: make it so that the winner dialog shows the black card's text (black bg)
-// with white card text filling in the blanks (whitebg)
-
-const name = Array(10)
-    .fill(null)
-    .map(() => Math.floor(Math.random() * 10).toString())
-    .join('')
 
 function Dashboard(props) {
     var classes = useStyles()
-    const [winnderDialogOpen, setWinnerDialogOpen] = useState(false)
-    const [winnerName, setWinnerName] = useState('')
-    const [allCardsPlayed, setAllCardsPlayed] = useState(false)
-    const [winnerCards, setWinnerCards] = useState([{ text: '' }])
-    // eslint-disable-next-line
-    const [gameID, setgameID] = useState('test1')
     const [anchorEl, setAnchorEl] = React.useState(null)
-    const [myCards, setMyCards] = useState([])
-    const [blackCard, setBlackCard] = useState(false)
-    const [_userCard, _setUserCard] = useState([])
-    const [userCards, setUserCards] = useState([])
-    // eslint-disable-next-line
-    const [userCardPlayed, setUserCardPlayed] = useState(false)
-    const [czar, setCzar] = useState('Waiting')
-    const [myTurn, setMyTurn] = useState(false)
+    const [winnderDialogOpen, setWinnerDialogOpen] = useState(false)
     const open = Boolean(anchorEl)
-
     const id = open ? 'add-section-popover' : undefined
-
     const handleSideClick = event => {
         setAnchorEl(open ? null : event.currentTarget)
     }
 
-    const fillTheBlank = (text, filler) => {
-        let index = text.indexOf('_')
-        let fillerFixed =
-            filler.charAt(filler.length - 1) == '.'
-                ? filler.slice(0, -1)
-                : filler
-        return index > -1
-            ? `${text.slice(0, index)}${fillerFixed}${text.slice(index + 1)}`
-            : `${text}\n${fillerFixed}`
-    }
-
     if (winnderDialogOpen) {
         Swal.fire({
-            title: `${winnerName} Won!`,
-            text: fillTheBlank(blackCard.text, winnerCards[0].text),
+            title: `${props.winnerName} Won!`,
+            text: 'TODO',
             icon: 'success',
             timer: 7000,
             width: '20rem',
@@ -100,60 +67,17 @@ function Dashboard(props) {
     // eslint-disable-next-line
     const handleWinnerDialogClose = () => {
         setWinnerDialogOpen(false)
-        setWinnerCards([{ text: '' }])
-        props.socket.emit('ready', true)
+        props.setWinnerCards([{text: ''}])
+        props.socket.emit('ready', true) // TODO no one cares if its true
     }
 
     useEffect(() => {
-        props.socket.on('dealWhite', doSetMyCards)
-        props.socket.on('dealBlack', setBlackCard)
-        props.socket.on('newCzar', setCzar)
-        props.socket.on('myTurn', setMyTurn)
-        props.socket.on('startgame', console.log)
-        props.socket.on('allCardsPlayed', () => {
-            console.log('all cards played')
-            setAllCardsPlayed(true)
-        })
-        props.socket.on('winnerSelected', (user, cards) => {
-            setAllCardsPlayed(false)
-            setWinnerName(user)
-            setUserCards([])
-            setWinnerCards(cards)
-        })
-        props.socket.on('whiteCardPlayed', card => {
-            setUserCardPlayed(true)
-            _setUserCard(card)
-        })
-    }, []) // eslint-disable-line
+        setWinnerDialogOpen(!!props.winnerCards[0].text)
+    }, [props.winnerCards]) // eslint-disable-line
 
-    useEffect(() => {
-        let newCards = userCards.slice().concat(_userCard)
-        setUserCards(newCards)
-    }, [_userCard]) // eslint-disable-line
-    useEffect(() => {
-        setWinnerDialogOpen(!!winnerCards[0].text)
-    }, [winnerCards]) // eslint-disable-line
-
-    const newGame = () =>
-        props.socket.emit('newGame', gameID, name, console.log)
-    const joinGame = () =>
-        props.socket.emit('joinGame', gameID, name, console.log)
-    const startGame = () => props.socket.emit('startGame', gameID, console.log)
-    const selectCard = card =>
-        props.socket.emit('chooseWhiteCard', card, console.log)
-    const playCard = (e, playedCard) => {
-        e.preventDefault()
-        // eslint-disable-next-line
-        let newCards = myCards.slice().filter(card => card != playedCard)
-        setMyCards(newCards)
-        props.socket.emit('playWhiteCard', playedCard, name, console.log)
-    }
-    const doSetMyCards = cards => {
-        console.log('myCards', myCards)
-        console.log('newcards', cards)
-        let newCards = cards
-        setMyCards(newCards)
-    }
+    const newGame = () => props.newGame() // TODO
+    const joinGame = () => props.joinGame() // TODO
+    const startGame = () => props.startGame() // TODO
 
     const renderIf = (condition, component) => (condition ? component : <></>)
 
@@ -174,7 +98,7 @@ function Dashboard(props) {
                 anchorEl={anchorEl}
                 newGame={newGame}
                 joinGame={joinGame}
-                tartGame={startGame}
+                startGame={startGame}
             />
             <Grid container justify="center" alignItems="center" spacing={2}>
                 <Grid item lg={12} sm={12} xs={12}>
@@ -214,11 +138,11 @@ function Dashboard(props) {
                                                     color="success"
                                                     colorBrightness={'light'}
                                                 >
-                                                    {czar[0].toUpperCase()}
+                                                    {props.czar[0].toUpperCase()}
                                                 </Avatar>
                                             }
                                             className={classes.topchip}
-                                            label={czar}
+                                            label={props.czar}
                                             onClick={handleClick}
                                         />
                                     </Box>
@@ -256,14 +180,14 @@ function Dashboard(props) {
                         </Grid>
                         <Grid item xs={12}>
                             {renderIf(
-                                blackCard,
+                                props.blackCard,
                                 <Card className={classes.blackcard}>
                                     <CardContent>
                                         <Typography
                                             className={classes.pos2}
                                             color="textSecondary"
                                         >
-                                            {blackCard.text}
+                                            {props.blackCard.text}
                                         </Typography>
                                     </CardContent>
                                 </Card>
@@ -286,7 +210,7 @@ function Dashboard(props) {
                                         options={flickityOptions}
                                         reloadOnUpdate
                                     >
-                                        {userCards.map(data => (
+                                        {props.userCards.map(data => (
                                             <Card
                                                 key={data.card.text}
                                                 className={classes.mycard}
@@ -302,7 +226,7 @@ function Dashboard(props) {
                                                 <Divider variant="middle" />
                                                 <CardActions>
                                                     {renderIf(
-                                                        !myTurn,
+                                                        !props.myTurn,
                                                         <Chip
                                                             color="info"
                                                             colorBrightness={
@@ -327,8 +251,8 @@ function Dashboard(props) {
                                                         />
                                                     )}
                                                     {renderIf(
-                                                        myTurn &&
-                                                            allCardsPlayed,
+                                                        props.myTurn &&
+                                                            props.allCardsPlayed,
                                                         <Chip
                                                             color="success"
                                                             colorBrightness={
@@ -339,7 +263,7 @@ function Dashboard(props) {
                                                             }
                                                             label="Select"
                                                             onClick={() =>
-                                                                selectCard(data)
+                                                                props.selectCard(data)
                                                             }
                                                         />
                                                     )}
@@ -366,7 +290,7 @@ function Dashboard(props) {
                                         options={flickityOptions}
                                         reloadOnUpdate
                                     >
-                                        {myCards.map(card => (
+                                        {props.myCards.map(card => (
                                             <Card
                                                 key={card.text}
                                                 className={classes.mycard}
@@ -381,7 +305,7 @@ function Dashboard(props) {
                                                 </CardContent>
 
                                                 {renderIf(
-                                                    !myTurn && !allCardsPlayed,
+                                                    !props.myTurn && !props.allCardsPlayed,
                                                     <>
                                                         <Divider variant="middle" />
                                                         <CardActions>
@@ -392,7 +316,7 @@ function Dashboard(props) {
                                                                 }
                                                                 label="Play Card"
                                                                 onClick={e =>
-                                                                    playCard(
+                                                                    props.playCard(
                                                                         e,
                                                                         card
                                                                     )

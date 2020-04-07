@@ -316,9 +316,7 @@ const getPlayerCards = (room, player, callback) => {
   client.hget(`${room}:${player}`, "cards", (e,r) => {
     handleRedisError(e)
     callback
-      ? r
-        ? callback(JSON.parse(r))
-        : callback(false)
+      ? callback(JSON.parse(r))
       : null
   })
 }
