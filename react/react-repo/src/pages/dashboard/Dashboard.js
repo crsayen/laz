@@ -1,7 +1,7 @@
 // eslint-disable-next-line
 import React, { useState, useEffect } from 'react'
 // eslint-disable-next-line
-import { Grid, Box, Fab, } from '@material-ui/core'
+import { Grid, Box, Fab } from '@material-ui/core'
 import Icon from '@mdi/react'
 import { mdiSettings as SettingsIcon } from '@mdi/js'
 // eslint-disable-next-line
@@ -11,28 +11,37 @@ import useStyles from './styles'
 import Flickity from 'react-flickity-component'
 import 'flickity/css/flickity.css'
 // eslint-disable-next-line
-import {Chip,Typography,Button,Avatar,Badge} from '../../components/Wrappers'
+import {
+    Chip,
+    Typography,
+    Button,
+    Avatar,
+    Badge,
+} from '../../components/Wrappers'
 import Card from '@material-ui/core/Card'
 import CardActions from '@material-ui/core/CardActions'
 import CardContent from '@material-ui/core/CardContent'
 import Divider from '@material-ui/core/Divider'
-import { socketConnect } from 'socket.io-react';
+import { socketConnect } from 'socket.io-react'
 import SettingsPopper from './components/SettingsPopper'
 import Swal from 'sweetalert2'
-import Container from '@material-ui/core/Container';
+import Container from '@material-ui/core/Container'
 // TODO: make it so that the winner dialog shows the black card's text (black bg)
 // with white card text filling in the blanks (whitebg)
 
-const name = Array(10).fill(null).map(() => Math.floor(Math.random() * 10).toString()).join('')
+const name = Array(10)
+    .fill(null)
+    .map(() => Math.floor(Math.random() * 10).toString())
+    .join('')
 
 function Dashboard(props) {
     var classes = useStyles()
     const [winnderDialogOpen, setWinnerDialogOpen] = useState(false)
     const [winnerName, setWinnerName] = useState('')
     const [allCardsPlayed, setAllCardsPlayed] = useState(false)
-    const [winnerCards, setWinnerCards] = useState([{text:''}])
+    const [winnerCards, setWinnerCards] = useState([{ text: '' }])
     // eslint-disable-next-line
-    const [gameID, setgameID] = useState("test1");
+    const [gameID, setgameID] = useState('test1')
     const [anchorEl, setAnchorEl] = React.useState(null)
     const [myCards, setMyCards] = useState([])
     const [blackCard, setBlackCard] = useState(false)
@@ -50,16 +59,28 @@ function Dashboard(props) {
         setAnchorEl(open ? null : event.currentTarget)
     }
 
+    const fillTheBlank = (text, filler) => {
+        let index = text.indexOf('_')
+        let fillerFixed =
+            filler.charAt(filler.length - 1) == '.'
+                ? filler.slice(0, -1)
+                : filler
+        return index > -1
+            ? `${text.slice(0, index)}${fillerFixed}${text.slice(index + 1)}`
+            : `${text}\n${fillerFixed}`
+    }
+
     if (winnderDialogOpen) {
         Swal.fire({
-          title: `${winnerName} Won!`,    
-          text: winnerCards,
-          icon: 'success',
-          timer: 2000,
-          width: '20rem',
-          showCancelButton: false,
-          confirmButtonText: 'Ok',
+            title: `${winnerName} Won!`,
+            text: fillTheBlank(blackCard.text, winnerCards[0].text),
+            icon: 'success',
+            timer: 7000,
+            width: '20rem',
+            showCancelButton: false,
+            confirmButtonText: 'Ok',
         }).then(() => {
+            props.socket.emit('ready')
             setWinnerDialogOpen(false)
         })
     }
@@ -75,26 +96,22 @@ function Dashboard(props) {
         pageDots: false,
     }
 
-
-
-      const handleClick = () => {
-
-    }
-// eslint-disable-next-line
+    const handleClick = () => {}
+    // eslint-disable-next-line
     const handleWinnerDialogClose = () => {
         setWinnerDialogOpen(false)
-        setWinnerCards([{text:''}])
-        props.socket.emit("ready", true)
+        setWinnerCards([{ text: '' }])
+        props.socket.emit('ready', true)
     }
 
     useEffect(() => {
-        props.socket.on("dealWhite", doSetMyCards)
-        props.socket.on("dealBlack", setBlackCard)
-        props.socket.on("newCzar", setCzar)
-        props.socket.on("myTurn", setMyTurn)
+        props.socket.on('dealWhite', doSetMyCards)
+        props.socket.on('dealBlack', setBlackCard)
+        props.socket.on('newCzar', setCzar)
+        props.socket.on('myTurn', setMyTurn)
         props.socket.on('startgame', console.log)
         props.socket.on('allCardsPlayed', () => {
-            console.log("all cards played")
+            console.log('all cards played')
             setAllCardsPlayed(true)
         })
         props.socket.on('winnerSelected', (user, cards) => {
@@ -103,138 +120,144 @@ function Dashboard(props) {
             setUserCards([])
             setWinnerCards(cards)
         })
-        props.socket.on("whiteCardPlayed", card => {
+        props.socket.on('whiteCardPlayed', card => {
             setUserCardPlayed(true)
             _setUserCard(card)
         })
-    },[]) // eslint-disable-line
+    }, []) // eslint-disable-line
 
     useEffect(() => {
         let newCards = userCards.slice().concat(_userCard)
         setUserCards(newCards)
-    },[_userCard]) // eslint-disable-line
+    }, [_userCard]) // eslint-disable-line
     useEffect(() => {
         setWinnerDialogOpen(!!winnerCards[0].text)
     }, [winnerCards]) // eslint-disable-line
 
-    const newGame = () => props.socket.emit('newGame', gameID, name, console.log)
-    const joinGame = () => props.socket.emit('joinGame', gameID, name, console.log)
+    const newGame = () =>
+        props.socket.emit('newGame', gameID, name, console.log)
+    const joinGame = () =>
+        props.socket.emit('joinGame', gameID, name, console.log)
     const startGame = () => props.socket.emit('startGame', gameID, console.log)
-    const selectCard = (card) => props.socket.emit("chooseWhiteCard", card, console.log)
+    const selectCard = card =>
+        props.socket.emit('chooseWhiteCard', card, console.log)
     const playCard = (e, playedCard) => {
-        e.preventDefault();
+        e.preventDefault()
         // eslint-disable-next-line
-        let newCards = myCards.filter(card => card != playedCard)
+        let newCards = myCards.slice().filter(card => card != playedCard)
         setMyCards(newCards)
-        props.socket.emit("playWhiteCard", playedCard, name, console.log)
+        props.socket.emit('playWhiteCard', playedCard, name, console.log)
     }
-    const doSetMyCards = (cards) => {
-        console.log(cards)
-        let newCards = myCards.slice().concat(cards)
+    const doSetMyCards = cards => {
+        console.log('myCards', myCards)
+        console.log('newcards', cards)
+        let newCards = cards
         setMyCards(newCards)
     }
 
-    const renderIf = (condition, component) => (
-        (condition) ? component : <></>
-    )
+    const renderIf = (condition, component) => (condition ? component : <></>)
 
     return (
         <>
-                 <Fab
-                    color="primary"
-                    aria-label="settings"
-                    onClick={e => handleSideClick(e)}
-                    className={classes.settingsFab}
-                    style={{ zIndex: 100 }}
-                >
-                 <Icon path={SettingsIcon} size={1} color="#fff" />
-                </Fab>
-                <SettingsPopper id={id} open={open} anchorEl={anchorEl} newGame={newGame} joinGame={joinGame} startGame={startGame}/>
-        <Grid container justify="center" alignItems="center" spacing={2}>
-            <Grid item lg={12} sm={12} xs={12}>
-                <Grid
-                    container
-                    justify="center"
-                    alignItems="center"
-                    spacing={2}
-                >
-                    <Grid item lg={8} sm={8} xs={8}>
-                        <Grid
-                            container
-                            justify="center"
-                            alignItems="center"
-                            style={{ paddingBottom: 20 }}
-                            spacing={2}
-                        >
-                            <Grid item lg={6} sm={6} xs={12}>
-                                <Typography
-                                    colorBrightness="hint"
-                                    variant="caption"
-                                    style={{ textAlign: 'center' }}
-                                    noWrap
-                                >
-                                    Card Czar:
-                                </Typography>
-                                <Box
-
-                                    alignItems="center"
-                                    justifyContent="center"
-                                >
-                                    <Chip
-                                        size="small"
-                                        color="success"
-                                        variant="outlined"
-                                        avatar={
-                                            <Avatar
-                                                color="success"
-                                                colorBrightness={'light'}
-                                            >
-                                                {czar[0].toUpperCase()}
-                                            </Avatar>
-                                        }
-                                        className={classes.topchip}
-                                        label={czar}
-                                        onClick={handleClick}
-                                    />
-                                </Box>
-                                <Typography
-                                    colorBrightness="hint"
-                                    variant="caption"
-                                    style={{ textAlign: 'center' }}
-                                    noWrap
-                                >
-                                    Up Next:
-                                </Typography>
-                                <Box
-
-                                    alignItems="center"
-                                    justifyContent="center"
-                                >
-                                    <Chip
-                                        size="small"
-                                        variant="outlined"
-                                        color="warning"
-                                        avatar={
-                                            <Avatar
-                                                color="warning"
-                                                colorBrightness={'light'}
-                                            >
-                                                R
-                                            </Avatar>
-                                        }
-                                        className={classes.topchip}
-                                        label="RooRoo"
-                                        onClick={handleClick}
-                                    />
-                                </Box>
+            <Fab
+                color="primary"
+                aria-label="settings"
+                onClick={e => handleSideClick(e)}
+                className={classes.settingsFab}
+                style={{ zIndex: 100 }}
+            >
+                <Icon path={SettingsIcon} size={1} color="#fff" />
+            </Fab>
+            <SettingsPopper
+                id={id}
+                open={open}
+                anchorEl={anchorEl}
+                newGame={newGame}
+                joinGame={joinGame}
+                tartGame={startGame}
+            />
+            <Grid container justify="center" alignItems="center" spacing={2}>
+                <Grid item lg={12} sm={12} xs={12}>
+                    <Grid
+                        container
+                        justify="center"
+                        alignItems="center"
+                        spacing={2}
+                    >
+                        <Grid item lg={8} sm={8} xs={8}>
+                            <Grid
+                                container
+                                justify="center"
+                                alignItems="center"
+                                style={{ paddingBottom: 20 }}
+                                spacing={2}
+                            >
+                                <Grid item lg={6} sm={6} xs={12}>
+                                    <Typography
+                                        colorBrightness="hint"
+                                        variant="caption"
+                                        style={{ textAlign: 'center' }}
+                                        noWrap
+                                    >
+                                        Card Czar:
+                                    </Typography>
+                                    <Box
+                                        alignItems="center"
+                                        justifyContent="center"
+                                    >
+                                        <Chip
+                                            size="small"
+                                            color="success"
+                                            variant="outlined"
+                                            avatar={
+                                                <Avatar
+                                                    color="success"
+                                                    colorBrightness={'light'}
+                                                >
+                                                    {czar[0].toUpperCase()}
+                                                </Avatar>
+                                            }
+                                            className={classes.topchip}
+                                            label={czar}
+                                            onClick={handleClick}
+                                        />
+                                    </Box>
+                                    <Typography
+                                        colorBrightness="hint"
+                                        variant="caption"
+                                        style={{ textAlign: 'center' }}
+                                        noWrap
+                                    >
+                                        Up Next:
+                                    </Typography>
+                                    <Box
+                                        alignItems="center"
+                                        justifyContent="center"
+                                    >
+                                        <Chip
+                                            size="small"
+                                            variant="outlined"
+                                            color="warning"
+                                            avatar={
+                                                <Avatar
+                                                    color="warning"
+                                                    colorBrightness={'light'}
+                                                >
+                                                    R
+                                                </Avatar>
+                                            }
+                                            className={classes.topchip}
+                                            label="RooRoo"
+                                            onClick={handleClick}
+                                        />
+                                    </Box>
+                                </Grid>
                             </Grid>
-
-                        </Grid>
                         </Grid>
                         <Grid item xs={12}>
                             {renderIf(
                                 blackCard,
-                                (<Card className={classes.blackcard}>
+                                <Card className={classes.blackcard}>
                                     <CardContent>
                                         <Typography
                                             className={classes.pos2}
@@ -243,124 +266,154 @@ function Dashboard(props) {
                                             {blackCard.text}
                                         </Typography>
                                     </CardContent>
-                                </Card>)
+                                </Card>
                             )}
                         </Grid>
 
-                    <Grid item lg={12} sm={12} xs={12}>
-                        <Divider variant="middle" />
-                        <Typography
-                            colorBrightness="hint"
-                            variant="caption"
-                            style={{ textAlign: 'center' }}
-                            noWrap
-                        >
-                            Cards in Play
-                        </Typography>
-                        <Container
-                        classes={{ root: classes.controot }} >
-                        <div className="carousel-holder" >
-                            <Flickity options={flickityOptions} reloadOnUpdate>
-                                {userCards.map(data => (
-                                    <Card
-                                        key={data.card.text}
-                                        className={classes.mycard}
+                        <Grid item lg={12} sm={12} xs={12}>
+                            <Divider variant="middle" />
+                            <Typography
+                                colorBrightness="hint"
+                                variant="caption"
+                                style={{ textAlign: 'center' }}
+                                noWrap
+                            >
+                                Cards in Play
+                            </Typography>
+                            <Container classes={{ root: classes.controot }}>
+                                <div className="carousel-holder">
+                                    <Flickity
+                                        options={flickityOptions}
+                                        reloadOnUpdate
                                     >
-                                        <CardContent>
-                                            <Typography
-                                                className={classes.pos}
-                                                color="textSecondary"
+                                        {userCards.map(data => (
+                                            <Card
+                                                key={data.card.text}
+                                                className={classes.mycard}
                                             >
-                                                {data.card.text}
-                                            </Typography>
-                                        </CardContent>
-                                        <Divider variant="middle" />
-                                        <CardActions>
-                                            {renderIf(!myTurn,
-                                                <Chip
-                                                    color="info"
-                                                    colorBrightness={'light'}
-                                                    avatar=
-                                                        {<Avatar color="info">
-                                                            {data.user.charAt(0).toUpperCase()}
-                                                        </Avatar>}
-                                                    className={classes.userchip}
-                                                    label={data.user}
-                                                    onClick={handleClick}
-                                                />
-                                            )}
-                                            {renderIf(
-                                                myTurn && allCardsPlayed,
-                                                (<Chip
-                                                    color="success"
-                                                    colorBrightness={'light'}
-                                                    className={classes.userchip}
-                                                    label='Select'
-                                                    onClick={() => selectCard(data)}
-                                                />)
-                                            )}
-                                        </CardActions>
-                                    </Card>
-                                ))}
-                            </Flickity>
-                        </div>
-                        </Container>
-                    </Grid>
-                    <Grid item lg={12} sm={12} xs={12}>
-                        <Divider variant="middle" />
-                        <Typography
-                            colorBrightness="hint"
-                            variant="caption"
-                            style={{ textAlign: 'center' }}
-                            noWrap
-                        >
-                            Your Cards
-                        </Typography>
-                        <Container
-                        classes={{ root: classes.controot }} >
-                        <div className="carousel-holder" >
-                            <Flickity options={flickityOptions} reloadOnUpdate>
-                                {myCards.map(card => (
-                                    <Card
-                                        key={card.text}
-                                        className={classes.mycard}
+                                                <CardContent>
+                                                    <Typography
+                                                        className={classes.pos}
+                                                        color="textSecondary"
+                                                    >
+                                                        {data.card.text}
+                                                    </Typography>
+                                                </CardContent>
+                                                <Divider variant="middle" />
+                                                <CardActions>
+                                                    {renderIf(
+                                                        !myTurn,
+                                                        <Chip
+                                                            color="info"
+                                                            colorBrightness={
+                                                                'light'
+                                                            }
+                                                            avatar={
+                                                                <Avatar color="info">
+                                                                    {data.user
+                                                                        .charAt(
+                                                                            0
+                                                                        )
+                                                                        .toUpperCase()}
+                                                                </Avatar>
+                                                            }
+                                                            className={
+                                                                classes.userchip
+                                                            }
+                                                            label={data.user}
+                                                            onClick={
+                                                                handleClick
+                                                            }
+                                                        />
+                                                    )}
+                                                    {renderIf(
+                                                        myTurn &&
+                                                            allCardsPlayed,
+                                                        <Chip
+                                                            color="success"
+                                                            colorBrightness={
+                                                                'light'
+                                                            }
+                                                            className={
+                                                                classes.userchip
+                                                            }
+                                                            label="Select"
+                                                            onClick={() =>
+                                                                selectCard(data)
+                                                            }
+                                                        />
+                                                    )}
+                                                </CardActions>
+                                            </Card>
+                                        ))}
+                                    </Flickity>
+                                </div>
+                            </Container>
+                        </Grid>
+                        <Grid item lg={12} sm={12} xs={12}>
+                            <Divider variant="middle" />
+                            <Typography
+                                colorBrightness="hint"
+                                variant="caption"
+                                style={{ textAlign: 'center' }}
+                                noWrap
+                            >
+                                Your Cards
+                            </Typography>
+                            <Container classes={{ root: classes.controot }}>
+                                <div className="carousel-holder">
+                                    <Flickity
+                                        options={flickityOptions}
+                                        reloadOnUpdate
                                     >
-                                        <CardContent>
-                                            <Typography
-                                                className={classes.pos}
-                                                color="textSecondary"
+                                        {myCards.map(card => (
+                                            <Card
+                                                key={card.text}
+                                                className={classes.mycard}
                                             >
-                                                {card.text}
-                                            </Typography>
-                                        </CardContent>
-                                        
-                                        {renderIf(
-                                            !myTurn && !allCardsPlayed,
-                                            (
-                                                <>
-                                            <Divider variant="middle" />
-                                            <CardActions>
-                                                <Chip
-                                                    color="secondary"
-                                                    className={classes.userchip}
-                                                    label="Play Card"
-                                                    onClick={(e) => playCard(e, card)}
-                                                />
-                                            </CardActions></>)
-                                        )}
-                                    </Card>
-                                ))}
-                            </Flickity>
-                        </div>
-                        </Container>
+                                                <CardContent>
+                                                    <Typography
+                                                        className={classes.pos}
+                                                        color="textSecondary"
+                                                    >
+                                                        {card.text}
+                                                    </Typography>
+                                                </CardContent>
+
+                                                {renderIf(
+                                                    !myTurn && !allCardsPlayed,
+                                                    <>
+                                                        <Divider variant="middle" />
+                                                        <CardActions>
+                                                            <Chip
+                                                                color="secondary"
+                                                                className={
+                                                                    classes.userchip
+                                                                }
+                                                                label="Play Card"
+                                                                onClick={e =>
+                                                                    playCard(
+                                                                        e,
+                                                                        card
+                                                                    )
+                                                                }
+                                                            />
+                                                        </CardActions>
+                                                    </>
+                                                )}
+                                            </Card>
+                                        ))}
+                                    </Flickity>
+                                </div>
+                            </Container>
+                        </Grid>
                     </Grid>
                 </Grid>
             </Grid>
-        </Grid>
         </>
     )
 }
 
 // #######################################################################
 
-export default socketConnect(Dashboard);
+export default socketConnect(Dashboard)

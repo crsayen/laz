@@ -128,61 +128,66 @@ io.on("connection", socket => {
 
   socket.on("playWhiteCard", (card, player, callback) => {
     const room = Object.keys(socket.rooms)[1];
-    client.hincrby(`${room}:${player}`, "numberOfCards", -1, handleRedisError);
-    client.hincrby(
-      `${room}:game`,
-      "numberOfCardsPlayed",
-      1,
-      (err, numberOfCardsPlayed) => {
-        if (err) console.error(err);
-        client.hget(`${room}:game`, "pick", (err, pick) => {
+    getPlayerCards(room, player, cards => {
+      console.log("preFiltrer", cards)
+      setPlayerCards(room, player, cards.filter(c => c.text != card.text), (cards) => {
+        console.log("postFilter", cards)
+      })
+      client.hincrby(
+        `${room}:game`,
+        "numberOfCardsPlayed",
+        1,
+        (err, numberOfCardsPlayed) => {
           if (err) console.error(err);
-          client.hget(
-            `${room}:${player}`,
-            "playedCards",
-            (err, playedCardsString) => {
+          client.hget(`${room}:game`, "pick", (err, pick) => {
+            if (err) console.error(err);
+            client.hget(
+              `${room}:${player}`,
+              "playedCards",
+              (err, playedCardsString) => {
+                if (err) console.error(err);
+                let playedCardsJson = JSON.parse(playedCardsString);
+                let playedCards = playedCardsJson.length
+                  ? playedCardsJson.map(string => JSON.parse(string)).push(card)
+                  : [card];
+                if (pick == playedCards.length) {
+                  io.to(room).emit(
+                    "whiteCardPlayed",
+                    playedCards.map(_card => ({
+                      card: _card,
+                      user: player
+                    }))
+                  );
+                  client.hset(
+                    `${room}:${player}`,
+                    "playedCards",
+                    "[]",
+                    handleRedisError
+                  );
+                } else {
+                  client.hset(
+                    `${room}:${player}`,
+                    "playedCards",
+                    JSON.stringify([playedCards]),
+                    handleRedisError
+                  );
+                }
+              }
+            );
+            client.llen(`${room}:players`, (err, numPlayers) => {
               if (err) console.error(err);
-              let playedCardsJson = JSON.parse(playedCardsString);
-              let playedCards = playedCardsJson.length
-                ? playedCardsJson.map(string => JSON.parse(string)).push(card)
-                : [card];
-              if (pick == playedCards.length) {
-                io.to(room).emit(
-                  "whiteCardPlayed",
-                  playedCards.map(_card => ({
-                    card: _card,
-                    user: player
-                  }))
-                );
-                client.hset(
-                  `${room}:${player}`,
-                  "playedCards",
-                  "[]",
-                  handleRedisError
-                );
-              } else {
-                client.hset(
-                  `${room}:${player}`,
-                  "playedCards",
-                  JSON.stringify([playedCards]),
-                  handleRedisError
+              if (numberOfCardsPlayed == (numPlayers - 1) * parseInt(pick)) {
+                io.to(room).emit("allCardsPlayed");
+                client.hset(`${room}:game`, "numberOfCardsPlayed", 0, err =>
+                  console.error(err)
                 );
               }
-            }
-          );
-          client.llen(`${room}:players`, (err, numPlayers) => {
-            if (err) console.error(err);
-            if (numberOfCardsPlayed == (numPlayers - 1) * parseInt(pick)) {
-              io.to(room).emit("allCardsPlayed");
-              client.hset(`${room}:game`, "numberOfCardsPlayed", 0, err =>
-                console.error(err)
-              );
-            }
-            callback(true);
+              callback(true);
+            });
           });
-        });
-      }
-    );
+        }
+      );
+    })
   });
 
   socket.on("ready", ready => {
@@ -279,7 +284,7 @@ const nextCzar = (id, callback) => {
 const _drawCards = (room, color, n, callback) => {
   client.hincrby(`${room}:game`, `${color}Cursor`, n, (err, cursor) => {
     handleRedisError(err);
-    callback(DECK[color].slice(cursor - n, cursor));
+    callback(DECK[color].slice(cursor - n + 1, cursor + 1));
   })
 };
 
@@ -311,8 +316,8 @@ const getPlayerCards = (room, player, callback) => {
   client.hget(`${room}:${player}`, "cards", (e,r) => {
     handleRedisError(e)
     callback
-      ? r 
-        ? callback(JSON.parse(r)) 
+      ? r
+        ? callback(JSON.parse(r))
         : callback(false)
       : null
   })
@@ -320,7 +325,9 @@ const getPlayerCards = (room, player, callback) => {
 
 const dealWhiteCards = (room, player, callback) => {
   getPlayerCards(room, player, (cards) => {
+    console.log("player cards", cards)
     drawCards(wfilter, room, "white", 7 - cards.length, (newCards) => {
+      console.log("newCards", newCards)
       let cardsDealt = [...cards, ...newCards]
       setPlayerCards(room, player, cardsDealt)
       SOCKETS.get(player).emit("dealWhite", cardsDealt)
