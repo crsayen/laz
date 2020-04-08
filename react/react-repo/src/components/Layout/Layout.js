@@ -38,6 +38,7 @@ function Layout(props) {
     const [myTurn, setMyTurn] = useState(false)
     const [openGames, setOpenGames] = useState([])
     const [gameJoined, setGameJoined] = useState(false)
+    const [players, setPlayers] = useState([])
 
 
     useEffect(() => {
@@ -90,14 +91,23 @@ function Layout(props) {
         setMyCards(newCards)
     }
 
+    const fetchGames = () => socket.emit('getOpenGames', games => {
+        console.log("fetching games")
+        setOpenGames(games)
+    })
+
+    const updatePlayers = (players) => {
+        console.log("update players:", players)
+        setPlayers(players)
+    }
+
     useEffect(() => {
-        socket.on('connect', () => socket.emit("getOpenGames", (games) => {
-            setOpenGames(games)
-        }));
+        socket.on('connect', fetchGames);
         socket.on('dealWhite', doSetMyCards)
         socket.on('dealBlack', setBlackCard)
         socket.on('newCzar', setCzar)
         socket.on('myTurn', setMyTurn)
+        socket.on('updatePlayers', updatePlayers)
         socket.on('startgame', console.log)
         socket.on('allCardsPlayed', () => {
             console.log('all cards played')
@@ -124,6 +134,8 @@ function Layout(props) {
                 newGame={newGame}
                 joinGame={joinGame}
                 openGames={openGames}
+                fetchGames={fetchGames}
+                players={players}
             />
             <div
                 className={classnames(classes.content, {

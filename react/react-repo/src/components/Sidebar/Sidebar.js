@@ -146,6 +146,7 @@ function Sidebar(props) {
         setAnchorElThree(null)
     }
     const handleChange = (event, newValue) => {
+        props.fetchGames()
         setValue(newValue)
     }
     const handleChangeIndex = index => {
@@ -391,7 +392,7 @@ function Sidebar(props) {
                         </Typography>
                         <div style={{ maxHeight: '175px', overflow: 'auto' }}>
                             <List className={classes.list} dense>
-                                {userList.map(data => (
+                                {props.players.map(data => (
                                     <ListItem key={data.name} button dense>
                                         <ListItemAvatar>
                                             <AccountCircleIcon />

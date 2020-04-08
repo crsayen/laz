@@ -31,20 +31,20 @@ server.listen(port, "0.0.0.0", () => {
   console.log(`listening on *:${port}`);
 });
 const MAX_PLAYERS = 10; // TODO: put in redis
-//client.flushall();
+client.flushall();
 client.on("error", e => console.error(e));
 var SOCKETS = new Map(); // TODO: put in redis
 
 io.on("connection", socket => {
 
-  socket.on("newGame", (id, player, callback) => {
+  socket.on("newGame", (room, player, callback) => {
     console.log("newGame event")
-    client.exists(`${id}:game`, exists => {
+    client.exists(`${room}:game`, exists => {
       if (exists) {
         callback(false);
       } else {
         client.hmset(
-          `${id}:game`,
+          `${room}:game`,
           "turnCursor", // TODO: deprecated
           0,
           "isPrivate",
@@ -62,10 +62,11 @@ io.on("connection", socket => {
           "started",
           0,
           OK => {
-            addPlayer(id, player, false, socket, (success) => {
-              client.rpush('openGames', id, (err, len) => {
+            addPlayer(room, player, false, socket, (success) => {
+              client.rpush('openGames', room, (err, len) => {
                 console.log("gameListLength:", len)
-                console.log("new game:",id)
+                console.log("new game:", room)
+                callback(true)
               })
             });
           }
@@ -73,15 +74,15 @@ io.on("connection", socket => {
       }
     });
 
-    socket.on("makePrivate", (id, password, callback) => {
-      console.log("makePrivate", id, password, callback);
-      if (!client.exists(`${id}:game`)) {
+    socket.on("makePrivate", (room, password, callback) => {
+      console.log("makePrivate", room, password, callback);
+      if (!client.exists(`${room}:game`)) {
         callback(false);
       } else {
         console.log("exists");
         bcrypt.hash(password, 10, (err, hash) => {
           if (err) console.error(err);
-          client.hmset(`${id}:game`, "password", hash, "isPrivate", 1);
+          client.hmset(`${room}:game`, "password", hash, "isPrivate", 1);
           callback(true);
         });
       }
@@ -90,10 +91,10 @@ io.on("connection", socket => {
 
   socket.on("getOpenGames", getOpenGames)
 
-  socket.on("joinGame", (id, player, callback) => {
-    if (client.exists(id)) {
+  socket.on("joinGame", (room, player, callback) => {
+    if (client.exists(room)) {
       client.hmget(
-        `${id}:game`,
+        `${room}:game`,
         "isPrivate",
         "started",
         "password",
@@ -109,14 +110,14 @@ io.on("connection", socket => {
                   return;
                 }
                 if (result) {
-                  addPlayer(id, player, !!parseInt(started), socket, callback);
+                  addPlayer(room, player, !!parseInt(started), socket, callback);
                   return;
                 }
                 callback(false);
               });
             });
           } else {
-            addPlayer(id, player, !!parseInt(started), socket, callback);
+            addPlayer(room, player, !!parseInt(started), socket, callback);
           }
         }
       );
@@ -125,8 +126,8 @@ io.on("connection", socket => {
     }
   });
 
-  socket.on("startGame", (id, callback) => {
-    nextRound(id);
+  socket.on("startGame", (room, callback) => {
+    nextRound(room);
     callback(true);
   });
 
@@ -260,6 +261,16 @@ io.on("connection", socket => {
         client.del(`${room}:${name}`, () => {
           console.log("removing player:", name)
           SOCKETS.delete(name)
+          client.lrange(`${room}:players`, 0, -1, (err, players) => {
+            if (players.length) {
+              io.to(room).emit("updatePlayers", Array.from(new Set(players.map(p => {
+                 return {name: p, score: "TODO"}
+              }))))
+            } else {
+              client.del(`${room}:game`)
+              client.del(`${room}:players`)
+            }
+          })
         })
       })
     })
@@ -270,7 +281,6 @@ var GAMES = []
 const compileGames = (game, numPlayers, numGames, callback) => {
   GAMES.push({ name: game, players: numPlayers, leader: 'TODO' })
   if (GAMES.length == numGames) {
-    console.log("compileGames", GAMES)
     callback(GAMES)
     GAMES = []
   }
@@ -288,42 +298,43 @@ const getOpenGames = (callback) => {
   })
 }
 
-const addPlayer = (id, player, started, socket, callback) => {
-  console.log("adding:", player, "room:", id);
-  client.rpush(`${id}:players`, player, (err, len) => {
+const addPlayer = (room, player, started, socket, callback) => {
+  console.log("adding:", player, "room:", room);
+  client.rpush(`${room}:players`, player, (err, len) => {
     if (len > MAX_PLAYERS) {
-      client.rpop(`${id}:players`, (err, popped) => {
-        if (popped !== player) {
-          console.error(Error("popped the wrong player"));
-        }
+      client.rpop(`${room}:players`, (err, popped) => {
+        popped !== player ? console.error(Error("popped the wrong player")) : null
       });
       socket.emit("failure", {
         message: "Game full"
       });
       callback(false);
     } else {
-      client.hset(`${id}:${player}`, "playedCards", "[]", handleRedisError);
-      client.hset(`${id}:${player}`, "cards", "[]", handleRedisError);
-      client.hmset(`${socket.id}`, 'name', player, 'room', id)
-      console.log("adding socket to redis:", socket.id, player, id)
+      client.hset(`${room}:${player}`, "playedCards", "[]", handleRedisError);
+      client.hset(`${room}:${player}`, "cards", "[]", handleRedisError);
+      client.hmset(`${socket.id}`, 'name', player, 'room', room)
+      console.log("adding socket to redis:", socket.id, player, room)
       SOCKETS.set(player, socket);
-      socket.join(id, err => {
-        if (err) {
-          console.error(err);
-        } else {
-          callback(true);
-        }
+      socket.join(room, err => {
+        err ? console.error(err) : null
+        dealWhiteCards(room, player)
+        client.lrange(`${room}:players`, 0, -1, (err, players) => {
+          io.to(room).emit("updatePlayers", Array.from(new Set(players.map(p => {
+            return { name: p, score: "TODO" }
+          }))))
+        })
+        callback(true);
       });
     }
   });
 };
 
-const nextCzar = (id, callback) => {
-  client.lpop(`${id}:players`, (err, czar) => {
+const nextCzar = (room, callback) => {
+  client.lpop(`${room}:players`, (err, czar) => {
     handleRedisError(err);
-    console.log(`popping from ${id}:players returned:`, czar)
+    console.log(`popping from ${room}:players returned:`, czar)
     console.log("adding czar to redis:", czar)
-    client.rpush(`${id}:players`, czar, handleRedisError);
+    client.rpush(`${room}:players`, czar, handleRedisError);
     callback(czar);
   });
 };
