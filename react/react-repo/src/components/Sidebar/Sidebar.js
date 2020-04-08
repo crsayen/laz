@@ -119,6 +119,7 @@ function Sidebar(props) {
     const layoutDispatch = useLayoutDispatch()
     const [joinGameText, setJoinGameText] = useState('')
     const [createGameText, setCreateGameText] = useState('')
+    const [selectedGame, setSelectedGame] = useState('')
     function createGameClick(event) {
         setIsCreateOpen(true)
         setAnchorElTwo(event.currentTarget)
@@ -135,7 +136,8 @@ function Sidebar(props) {
         setIsCreateOpen(false)
         setAnchorElTwo(null)
     }
-    function joinGame(event) {
+    function joinGame(event, data) {
+        setSelectedGame(data.name)
         setJoinGameOpen(true)
         setAnchorElThree(event.currentTarget)
     }
@@ -155,6 +157,9 @@ function Sidebar(props) {
     }
 
     const handleJoinClicked = () => {
+        setJoinGameOpen(false)
+        setIsOpen(false)
+        toggleSidebar(layoutDispatch)
         props.joinGame(joinGameText)
     }
 
@@ -164,6 +169,13 @@ function Sidebar(props) {
 
     const handleCreateGameText = (e) => {
         setCreateGameText(e.target.value)
+    }
+
+    const handleJoinFromGamesList = () => {
+        setJoinGameOpen(false)
+        setIsOpen(false)
+        toggleSidebar(layoutDispatch)
+        props.joinGame(selectedGame)
     }
 
     const toggleDrawer = value => event => {
@@ -412,7 +424,7 @@ function Sidebar(props) {
                                                 <IconButton
                                                     edge="end"
                                                     aria-label="Join Game"
-                                                    onClick={joinGame}
+                                                    onClick={(e) => joinGame(e, data)}
                                                 >
                                                     <PlayCircleFilledIcon />
                                                 </IconButton>
@@ -449,6 +461,7 @@ function Sidebar(props) {
                                                 color="secondary"
                                                 variant="contained"
                                                 className={classes2.noBoxShadow}
+                                                onClick={handleJoinFromGamesList}
                                             >
                                                 Join
                                             </Button>

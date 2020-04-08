@@ -37,6 +37,8 @@ function Layout(props) {
     const [czar, setCzar] = useState('Waiting')
     const [myTurn, setMyTurn] = useState(false)
     const [openGames, setOpenGames] = useState([])
+    const [gameJoined, setGameJoined] = useState(false)
+
 
     useEffect(() => {
         let newCards = userCards.slice().concat(_userCard)
@@ -55,11 +57,14 @@ function Layout(props) {
     }
 
     const joinGame = (id) => {
-        socket.emit('joinGame', id, name, success =>
-            success
-                ? setgameID(id)
-                : console.error("failed to join game") // TODO
-        )
+        socket.emit('joinGame', id, name, success => {
+            if (success) {
+                setgameID(id)
+                setGameJoined(true)
+            } else {
+                console.error("failed to join game")
+            }
+        })
     }
 
     const startGame = () => {
@@ -144,9 +149,12 @@ function Layout(props) {
                                 myTurn={myTurn}
                                 newGame={newGame}
                                 joinGame={joinGame}
+                                gameJoined={gameJoined}
                                 startGame={startGame}
                                 selectCard={selectCard}
                                 playCard={playCard}
+                                gameJoined={gameJoined}
+                                setGameJoined={setGameJoined}
                                 {...props}
                             />
                         }

@@ -52,6 +52,22 @@ function Dashboard(props) {
         })
     }
 
+    if (props.gameJoined) {
+        Swal.fire(
+            {
+                title: `Joined Game`,
+                text: `Welcome to ${props.gameID}`,
+                icon: 'success',
+                timer: 2000,
+                width: '20rem',
+                showCancelButton: false,
+                confirmButtonText: 'Ok'
+            }
+        ).then(() => {
+            props.setGameJoined(false)
+        })
+    }
+
     const flickityOptions = {
         adaptiveHeight: true,
         initialIndex: 0,
