@@ -252,12 +252,25 @@ io.on("connection", socket => {
       }
     );
   });
+
+  socket.on("disconnect", () => {
+    client.hmget(`${socket.id}`, 'name', 'room', (err, nameRoom) => {
+      let [name, room] = nameRoom
+      client.lrem(`${room}:players`, 1, name, () => {
+        client.del(`${room}:${name}`, () => {
+          console.log("removing player:", name)
+          SOCKETS.delete(name)
+        })
+      })
+    })
+  })
 });
 
 var GAMES = []
 const compileGames = (game, numPlayers, numGames, callback) => {
   GAMES.push({ name: game, players: numPlayers, leader: 'TODO' })
   if (GAMES.length == numGames) {
+    console.log("compileGames", GAMES)
     callback(GAMES)
     GAMES = []
   }
@@ -276,7 +289,7 @@ const getOpenGames = (callback) => {
 }
 
 const addPlayer = (id, player, started, socket, callback) => {
-  console.log("adding:", player);
+  console.log("adding:", player, "room:", id);
   client.rpush(`${id}:players`, player, (err, len) => {
     if (len > MAX_PLAYERS) {
       client.rpop(`${id}:players`, (err, popped) => {
@@ -291,6 +304,8 @@ const addPlayer = (id, player, started, socket, callback) => {
     } else {
       client.hset(`${id}:${player}`, "playedCards", "[]", handleRedisError);
       client.hset(`${id}:${player}`, "cards", "[]", handleRedisError);
+      client.hmset(`${socket.id}`, 'name', player, 'room', id)
+      console.log("adding socket to redis:", socket.id, player, id)
       SOCKETS.set(player, socket);
       socket.join(id, err => {
         if (err) {
@@ -306,6 +321,8 @@ const addPlayer = (id, player, started, socket, callback) => {
 const nextCzar = (id, callback) => {
   client.lpop(`${id}:players`, (err, czar) => {
     handleRedisError(err);
+    console.log(`popping from ${id}:players returned:`, czar)
+    console.log("adding czar to redis:", czar)
     client.rpush(`${id}:players`, czar, handleRedisError);
     callback(czar);
   });
