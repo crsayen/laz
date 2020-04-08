@@ -31,12 +31,14 @@ server.listen(port, "0.0.0.0", () => {
   console.log(`listening on *:${port}`);
 });
 const MAX_PLAYERS = 10; // TODO: put in redis
-client.flushall();
+//client.flushall();
 client.on("error", e => console.error(e));
 var SOCKETS = new Map(); // TODO: put in redis
 
 io.on("connection", socket => {
+
   socket.on("newGame", (id, player, callback) => {
+    console.log("newGame event")
     client.exists(`${id}:game`, exists => {
       if (exists) {
         callback(false);
@@ -60,7 +62,12 @@ io.on("connection", socket => {
           "started",
           0,
           OK => {
-            addPlayer(id, player, false, socket, callback);
+            addPlayer(id, player, false, socket, (success) => {
+              client.rpush('openGames', id, (err, len) => {
+                console.log("gameListLength:", len)
+                console.log("new game:",id)
+              })
+            });
           }
         );
       }
@@ -80,6 +87,8 @@ io.on("connection", socket => {
       }
     });
   });
+
+  socket.on("getOpenGames", getOpenGames)
 
   socket.on("joinGame", (id, player, callback) => {
     if (client.exists(id)) {
@@ -244,6 +253,27 @@ io.on("connection", socket => {
     );
   });
 });
+
+var GAMES = []
+const compileGames = (game, numPlayers, numGames, callback) => {
+  GAMES.push({ name: game, players: numPlayers, leader: 'TODO' })
+  if (GAMES.length == numGames) {
+    callback(GAMES)
+    GAMES = []
+  }
+}
+
+const getOpenGames = (callback) => {
+  console.log("getOpenGames called")
+  client.lrange("openGames", 0, -1, (err, games) => {
+    console.log("redisGames", games)
+    games.forEach(game => {
+      client.lrange(`${game}:players`, 0, -1, (err, players) => {
+        compileGames(game, players.length, games.length, callback)
+      })
+    })
+  })
+}
 
 const addPlayer = (id, player, started, socket, callback) => {
   console.log("adding:", player);

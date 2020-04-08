@@ -397,7 +397,7 @@ function Sidebar(props) {
                         <Container classes={{ root: classes.controot }}>
                             <div className={classes.demo}>
                                 <List className={classes.list} dense>
-                                    {gameList.map(data => (
+                                    {props.openGames.map(data => (
                                         <ListItem key={data.name} button>
                                             <ListItemAvatar>
                                                 <Avatar>

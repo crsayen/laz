@@ -36,6 +36,7 @@ function Layout(props) {
     const [userCardPlayed, setUserCardPlayed] = useState(false)
     const [czar, setCzar] = useState('Waiting')
     const [myTurn, setMyTurn] = useState(false)
+    const [openGames, setOpenGames] = useState([])
 
     useEffect(() => {
         let newCards = userCards.slice().concat(_userCard)
@@ -43,12 +44,14 @@ function Layout(props) {
     }, [_userCard]) // eslint-disable-line
 
     const newGame = (id) => {
-        setgameID(id)
-        socket.emit('newGame', id, name, success =>
+        console.log("new game:",id)
+        socket.emit('newGame', id, name, success => {
+            console.log("newGameCallback")
             success
                 ? setgameID(id)
                 : console.error("failed to create game") // TODO
-        )
+            console.log("gameID", gameID)
+        })
     }
 
     const joinGame = (id) => {
@@ -83,7 +86,9 @@ function Layout(props) {
     }
 
     useEffect(() => {
-        socket.on('connect', () => console.log("socket:", socket.id));
+        socket.on('connect', () => socket.emit("getOpenGames", (games) => {
+            setOpenGames(games)
+        }));
         socket.on('dealWhite', doSetMyCards)
         socket.on('dealBlack', setBlackCard)
         socket.on('newCzar', setCzar)
@@ -113,6 +118,7 @@ function Layout(props) {
             <Sidebar
                 newGame={newGame}
                 joinGame={joinGame}
+                openGames={openGames}
             />
             <div
                 className={classnames(classes.content, {
