@@ -42,12 +42,21 @@ function Layout(props) {
         setUserCards(newCards)
     }, [_userCard]) // eslint-disable-line
 
-    const newGame = () => {
-        socket.emit('newGame', gameID, name, console.log)
+    const newGame = (id) => {
+        setgameID(id)
+        socket.emit('newGame', id, name, success =>
+            success
+                ? setgameID(id)
+                : console.error("failed to create game") // TODO
+        )
     }
 
-    const joinGame = () => {
-        socket.emit('joinGame', gameID, name, console.log)
+    const joinGame = (id) => {
+        socket.emit('joinGame', id, name, success =>
+            success
+                ? setgameID(id)
+                : console.error("failed to join game") // TODO
+        )
     }
 
     const startGame = () => {
@@ -101,7 +110,10 @@ function Layout(props) {
     return (
         <div className={classes.root}>
             <Header history={props.history} />
-            <Sidebar />
+            <Sidebar
+                newGame={newGame}
+                joinGame={joinGame}
+            />
             <div
                 className={classnames(classes.content, {
                     [classes.contentShift]: layoutState.isSidebarOpened,
