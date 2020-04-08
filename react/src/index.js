@@ -277,16 +277,14 @@ io.on("connection", socket => {
   })
 });
 
-var GAMES = []
-const compileGames = (game, numPlayers, numGames, callback) => {
-  GAMES.push({ name: game, players: numPlayers, leader: 'TODO' })
-  if (GAMES.length == numGames) {
-    callback(GAMES)
-    GAMES = []
-  }
-}
-
 const getOpenGames = (callback) => {
+  var GAMES = []
+  const compileGames = (game, numPlayers, numGames, callback) => {
+    GAMES.push({ name: game, players: numPlayers, leader: 'TODO' })
+    if (GAMES.length == numGames) {
+      callback(GAMES)
+    }
+  }
   console.log("getOpenGames called")
   client.lrange("openGames", 0, -1, (err, games) => {
     console.log("redisGames", games)
