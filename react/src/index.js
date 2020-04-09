@@ -4,8 +4,8 @@ import bodyParser from "body-parser";
 import user from "./routes/user";
 import deck from "../deck.js";
 const _ = require("lodash");
-const redis = require("redis");
-const client = redis.createClient();
+const asyncRedis = require("async-redis");
+const client = asyncRedis.createClient();
 const bcrypt = require("bcrypt");
 const axios = require("axios");
 const app = require("express")();
@@ -37,42 +37,29 @@ var SOCKETS = new Map(); // TODO: put in redis
 
 io.on("connection", socket => {
 
-  socket.on("newGame", (room, player, callback) => {
+  socket.on("newGame", async (room, player, callback) => {
     console.log("newGame event")
-    client.exists(`${room}:game`, exists => {
-      if (exists) {
-        callback(false);
-      } else {
-        client.hmset(
-          `${room}:game`,
-          "turnCursor", // TODO: deprecated
-          0,
-          "isPrivate",
-          0,
-          "blackCursor",
-          0,
-          "whiteCursor",
-          0,
-          "numberOfcardsPlayed",
-          0,
-          "numberOfPlayersReady",
-          0,
-          "pick",
-          7,
-          "started",
-          0,
-          OK => {
-            addPlayer(room, player, false, socket, (success) => {
-              client.rpush('openGames', room, (err, len) => {
-                console.log("gameListLength:", len)
-                console.log("new game:", room)
-                callback(true)
-              })
-            });
-          }
-        );
-      }
-    });
+    let exists = await client.exists(`${room}:game`)
+    if (exists) {
+      callback(false);
+    } else {
+      await client.hmset(
+        `${room}:game`,
+        "isPrivate", 0,
+        "blackCursor", 0,
+        "whiteCursor", 0,
+        "numberOfcardsPlayed", 0,
+        "numberOfPlayersReady", 0,
+        "pick", 7,
+        "started", 0
+      )
+      addPlayer(room, player, false, socket, async (success) => {
+        let len = await client.rpush('openGames', room)
+        console.log("new game:", room)
+        callback(true)
+      })
+    }
+  })
 
     socket.on("makePrivate", (room, password, callback) => {
       console.log("makePrivate", room, password, callback);
@@ -87,7 +74,6 @@ io.on("connection", socket => {
         });
       }
     });
-  });
 
   socket.on("getOpenGames", getOpenGames)
 
