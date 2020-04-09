@@ -101,7 +101,7 @@ io.on("connection", socket => {
     nextRound(socket.rooms[0]);
   });
 
-  socket.on("playWhiteCard", (card, player, callback) => {
+  socket.on("playWhiteCard", async (card, player, callback) => {
     const room = Object.keys(socket.rooms)[1];
     getPlayerCards(room, player, cards => {
       console.log("preFiltrer", cards)
@@ -143,7 +143,7 @@ io.on("connection", socket => {
     );
   });
 
-  socket.on("ready", ready => {
+  socket.on("ready", async ready => {
     const room = Object.keys(socket.rooms)[1]
     let numberOfPlayersReady =
       await client.hincrby(`${room}:game`, "numberOfPlayersReady", 1)
@@ -154,7 +154,7 @@ io.on("connection", socket => {
     }
   })
 
-  socket.on("chooseWhiteCard", (data, callback) => {
+  socket.on("chooseWhiteCard", async (data, callback) => {
     const room = Object.keys(socket.rooms)[1]
     let numberOfChoseCards =
       await client.lpush(`${room}:winningCards`, JSON.stringify(data.card))
@@ -167,7 +167,7 @@ io.on("connection", socket => {
     }
   })
 
-  socket.on("disconnect", () => {
+  socket.on("disconnect", async () => {
     let nameRoom = await client.hmget(`${socket.id}`, 'name', 'room')
     let [name, room] = nameRoom
     await client.lrem(`${room}:players`, 1, name)
@@ -190,7 +190,7 @@ io.on("connection", socket => {
   })
 })
 
-const getOpenGames = (callback) => {
+const getOpenGames = async (callback) => {
   var GAMES = []
   const compileGames = (game, numPlayers, numGames, callback) => {
     GAMES.push({ name: game, players: numPlayers, leader: 'TODO' })
@@ -205,52 +205,44 @@ const getOpenGames = (callback) => {
   })
 }
 
-const addPlayer = (room, player, started, socket, callback) => {
+const addPlayer = async (room, player, started, socket, callback) => {
   console.log("adding:", player, "room:", room);
-  client.rpush(`${room}:players`, player, (err, len) => {
-    if (len > MAX_PLAYERS) {
-      client.rpop(`${room}:players`, (err, popped) => {
-        popped !== player ? console.error(Error("popped the wrong player")) : null
-      });
-      socket.emit("failure", {
-        message: "Game full"
-      });
-      callback(false);
-    } else {
-      client.hset(`${room}:${player}`, "playedCards", "[]", handleRedisError);
-      client.hset(`${room}:${player}`, "cards", "[]", handleRedisError);
-      client.hmset(`${socket.id}`, 'name', player, 'room', room)
-      console.log("adding socket to redis:", socket.id, player, room)
-      SOCKETS.set(player, socket);
-      socket.join(room, err => {
-        err ? console.error(err) : null
-        dealWhiteCards(room, player)
-        client.lrange(`${room}:players`, 0, -1, (err, players) => {
-          io.to(room).emit("updatePlayers", Array.from(new Set(players.map(p => {
-            return { name: p, score: "TODO" }
-          }))))
-        })
-        callback(true);
-      });
-    }
-  });
+  let len = await client.llen(`${room}:players`)
+  if (len > MAX_PLAYERS) {
+    client.rpop(`${room}:players`)
+    callback(false);
+  } else {
+    client.rpush(`${room}:players`, player)
+    client.hset(`${room}:${player}`, "playedCards", "[]");
+    client.hset(`${room}:${player}`, "cards", "[]");
+    client.hmset(`${socket.id}`, 'name', player, 'room', room)
+    SOCKETS.set(player, socket);
+    socket.join(room, err => {
+      dealWhiteCards(room, player)
+      let players = await client.lrange(`${room}:players`, 0, -1)
+      io.to(room).emit(
+        "updatePlayers", Array.from(
+          new Set(
+            players.map(p => ({ name: p, score: "TODO" }))
+          )
+        )
+      )
+    })
+    callback(true);
+  }
 };
 
-const nextCzar = (room, callback) => {
-  client.lpop(`${room}:players`, (err, czar) => {
-    handleRedisError(err);
-    console.log(`popping from ${room}:players returned:`, czar)
-    console.log("adding czar to redis:", czar)
-    client.rpush(`${room}:players`, czar, handleRedisError);
-    callback(czar);
-  });
+const nextCzar = async (room, callback) => {
+  let czar = await client.lpop(`${room}:players`)
+  handleRedisError(err);
+  client.rpush(`${room}:players`, czar, handleRedisError);
+  callback(czar);
 };
 
-const _drawCards = (room, color, n, callback) => {
-  client.hincrby(`${room}:game`, `${color}Cursor`, n, (err, cursor) => {
-    handleRedisError(err);
-    callback(DECK[color].slice(cursor - n + 1, cursor + 1));
-  })
+const _drawCards = async (room, color, n, callback) => {
+  let cursor = await client.hincrby(`${room}:game`, `${color}Cursor`, n)
+  handleRedisError(err);
+  callback(DECK[color].slice(cursor - n + 1, cursor + 1));
 };
 
 const drawCards = (filterfn, room, color, n, callback) => {
@@ -268,22 +260,14 @@ const wfilter = (card) => !card.text.includes('*')
 const bfilter = (card) => card.pick < 2
 
 const setPlayerCards = (room, player, cards, callback) => {
-  client.hset(`${room}:${player}`, "cards", JSON.stringify(
-      cards
-    ), (e,r) => {
-      handleRedisError(e)
-      callback ? callback(cards) : null
-    }
-  );
+  client.hset(`${room}:${player}`, "cards", JSON.stringify(cards))
 }
 
-const getPlayerCards = (room, player, callback) => {
-  client.hget(`${room}:${player}`, "cards", (e,r) => {
-    handleRedisError(e)
-    callback
-      ? callback(JSON.parse(r))
-      : null
-  })
+const getPlayerCards = async (room, player, callback) => {
+  let r = await client.hget(`${room}:${player}`, "cards")
+  callback
+    ? callback(JSON.parse(r))
+    : null
 }
 
 const dealWhiteCards = (room, player, callback) => {
@@ -308,16 +292,14 @@ const dealBlackCard = (room, callback) => {
   })
 }
 
-const nextRound = (room) => {
-  client.lrange(`${room}:players`, 0, -1, (err, players) => {
-    handleRedisError(err)
-    nextCzar(room, (czar) => {
-      io.to(room).emit('newCzar', czar)
-      dealBlackCard(room)
-      players.forEach(player => {
-        SOCKETS.get(player).emit("myTurn", (player == czar))
-        dealWhiteCards(room, player)
-      })
+const nextRound = async (room) => {
+  let players = await client.lrange(`${room}:players`, 0, -1)
+  nextCzar(room, (czar) => {
+    io.to(room).emit('newCzar', czar)
+    dealBlackCard(room)
+    players.forEach(player => {
+      SOCKETS.get(player).emit("myTurn", (player == czar))
+      dealWhiteCards(room, player)
     })
   })
 }
