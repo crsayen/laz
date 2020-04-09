@@ -61,52 +61,31 @@ io.on("connection", socket => {
     }
   })
 
-    socket.on("makePrivate", (room, password, callback) => {
-      console.log("makePrivate", room, password, callback);
-      if (!client.exists(`${room}:game`)) {
-        callback(false);
-      } else {
-        console.log("exists");
-        bcrypt.hash(password, 10, (err, hash) => {
-          if (err) console.error(err);
-          client.hmset(`${room}:game`, "password", hash, "isPrivate", 1);
-          callback(true);
-        });
-      }
-    });
+  socket.on("makePrivate", async (room, password, callback) => {
+    console.log("makePrivate", room, password, callback);
+    if (! await client.exists(`${room}:game`)) {
+      callback(false);
+    } else {
+      console.log("exists");
+      bcrypt.hash(password, 10, (err, hash) => {
+        if (err) console.error(err);
+        client.hmset(`${room}:game`, "password", hash, "isPrivate", 1);
+        callback(true);
+      });
+    }
+  });
 
   socket.on("getOpenGames", getOpenGames)
 
-  socket.on("joinGame", (room, player, callback) => {
-    if (client.exists(room)) {
-      client.hmget(
+  socket.on("joinGame", async (room, player, callback) => {
+    if (await client.exists(room)) {
+      let [isPrivate, started, hash] = await client.hmget(
         `${room}:game`,
         "isPrivate",
         "started",
         "password",
-        (err, [isPrivate, started, hash]) => {
-          if (parseInt(isPrivate)) {
-            socket.emit("requestPassword", password => {
-              bcrypt.compare(password, hash, (err, result) => {
-                if (err) {
-                  console.error(err);
-                  socket.emit("failure", {
-                    message: "internal error"
-                  });
-                  return;
-                }
-                if (result) {
-                  addPlayer(room, player, !!parseInt(started), socket, callback);
-                  return;
-                }
-                callback(false);
-              });
-            });
-          } else {
-            addPlayer(room, player, !!parseInt(started), socket, callback);
-          }
-        }
-      );
+      )
+      addPlayer(room, player, !!parseInt(started), socket, callback);
     } else {
       callback(false);
     }
@@ -129,139 +108,87 @@ io.on("connection", socket => {
       setPlayerCards(room, player, cards.filter(c => c.text != card.text), (cards) => {
         console.log("postFilter", cards)
       })
-      client.hincrby(
-        `${room}:game`,
-        "numberOfCardsPlayed",
-        1,
-        (err, numberOfCardsPlayed) => {
-          if (err) console.error(err);
-          client.hget(`${room}:game`, "pick", (err, pick) => {
-            if (err) console.error(err);
-            client.hget(
-              `${room}:${player}`,
-              "playedCards",
-              (err, playedCardsString) => {
-                if (err) console.error(err);
-                let playedCardsJson = JSON.parse(playedCardsString);
-                let playedCards = playedCardsJson.length
-                  ? playedCardsJson.map(string => JSON.parse(string)).push(card)
-                  : [card];
-                if (pick == playedCards.length) {
-                  io.to(room).emit(
-                    "whiteCardPlayed",
-                    playedCards.map(_card => ({
-                      card: _card,
-                      user: player
-                    }))
-                  );
-                  client.hset(
-                    `${room}:${player}`,
-                    "playedCards",
-                    "[]",
-                    handleRedisError
-                  );
-                } else {
-                  client.hset(
-                    `${room}:${player}`,
-                    "playedCards",
-                    JSON.stringify([playedCards]),
-                    handleRedisError
-                  );
-                }
-              }
-            );
-            client.llen(`${room}:players`, (err, numPlayers) => {
-              if (err) console.error(err);
-              if (numberOfCardsPlayed == (numPlayers - 1) * parseInt(pick)) {
-                io.to(room).emit("allCardsPlayed");
-                client.hset(`${room}:game`, "numberOfCardsPlayed", 0, err =>
-                  console.error(err)
-                );
-              }
-              callback(true);
-            });
-          });
-        }
-      );
-    })
+      let numberOfCardsPlayed = await client.hincrby(`${room}:game`, "numberOfCardsPlayed", 1)
+      let pick = await client.hget(`${room}:game`, "pick")
+      let playedCardsString = await client.hget(`${room}:${player}`, "playedCards")
+      let playedCardsJson = JSON.parse(playedCardsString)
+      let playedCards = playedCardsJson.length
+        ? playedCardsJson.map(string => JSON.parse(string)).push(card)
+        : [card]
+      if (pick == playedCards.length) {
+        io.to(room).emit(
+          "whiteCardPlayed",
+          playedCards.map(_card => ({
+            card: _card,
+            user: player
+          }))
+        )
+        client.hset(`${room}:${player}`, "playedCards", "[]")
+      } else {
+        client.hset(
+          `${room}:${player}`,
+          "playedCards",
+          JSON.stringify([playedCards]),
+          handleRedisError
+        )
+      }
+      let numPlayers = await client.llen(`${room}:players`)
+      if (err) console.error(err);
+      if (numberOfCardsPlayed == (numPlayers - 1) * parseInt(pick)) {
+        io.to(room).emit("allCardsPlayed");
+        client.hset(`${room}:game`, "numberOfCardsPlayed", 0)
+      }
+      callback(true);
+    }
+    );
   });
 
   socket.on("ready", ready => {
-    const room = Object.keys(socket.rooms)[1];
-    client.hincrby(
-      `${room}:game`,
-      "numberOfPlayersReady",
-      1,
-      (err, numberOfPlayersReady) => {
-        if (err) console.error(err);
-        client.hget(`${room}:game`, "pick", (err, pick) => {
-          if (err) console.error(err);
-          client.llen(`${room}:players`, (err, numPlayers) => {
-            if (err) console.error(err);
-            if (numberOfPlayersReady == numPlayers) {
-              nextRound(room);
-              client.hset(
-                `${room}:game`,
-                "numberOfPlayersReady",
-                0,
-                handleRedisError
-              );
-            }
-          });
-        });
-      }
-    );
-  });
+    const room = Object.keys(socket.rooms)[1]
+    let numberOfPlayersReady =
+      await client.hincrby(`${room}:game`, "numberOfPlayersReady", 1)
+    let numPlayers = await client.llen(`${room}:players`)
+    if (numberOfPlayersReady == numPlayers) {
+      nextRound(room)
+      client.hset(`${room}:game`, "numberOfPlayersReady", 0)
+    }
+  })
 
   socket.on("chooseWhiteCard", (data, callback) => {
-    const room = Object.keys(socket.rooms)[1];
-    client.lpush(
-      `${room}:winningCards`,
-      JSON.stringify(data.card),
-      (err, numberOfChoseCards) => {
-        handleRedisError(err);
-        client.hget(`${room}:game`, "pick", (err, pick) => {
-          if (numberOfChoseCards == parseInt(pick)) {
-            client.lrange(
-              `${room}:winningCards`,
-              0,
-              -1,
-              (err, chosenCardsStrings) => {
-                let chosenCards = chosenCardsStrings.map(string =>
-                  JSON.parse(string)
-                );
-                io.to(room).emit("winnerSelected", data.user, chosenCards);
-              }
-            );
-            client.del(`${room}:winningCards`);
-          }
-        });
-      }
-    );
-  });
+    const room = Object.keys(socket.rooms)[1]
+    let numberOfChoseCards =
+      await client.lpush(`${room}:winningCards`, JSON.stringify(data.card))
+    let pick = await client.hget(`${room}:game`, "pick")
+    if (numberOfChoseCards == parseInt(pick)) {
+      let chosenCardsStrings = client.lrange(`${room}:winningCards`, 0, -1)
+      let chosenCards = chosenCardsStrings.map(s => JSON.parse(s))
+      io.to(room).emit("winnerSelected", data.user, chosenCards)
+      client.del(`${room}:winningCards`)
+    }
+  })
 
   socket.on("disconnect", () => {
-    client.hmget(`${socket.id}`, 'name', 'room', (err, nameRoom) => {
-      let [name, room] = nameRoom
-      client.lrem(`${room}:players`, 1, name, () => {
-        client.del(`${room}:${name}`, () => {
-          console.log("removing player:", name)
-          SOCKETS.delete(name)
-          client.lrange(`${room}:players`, 0, -1, (err, players) => {
-            if (players.length) {
-              io.to(room).emit("updatePlayers", Array.from(new Set(players.map(p => {
-                 return {name: p, score: "TODO"}
-              }))))
-            } else {
-              client.del(`${room}:game`)
-              client.del(`${room}:players`)
-            }
-          })
-        })
-      })
-    })
+    let nameRoom = await client.hmget(`${socket.id}`, 'name', 'room')
+    let [name, room] = nameRoom
+    await client.lrem(`${room}:players`, 1, name)
+    await client.del(`${room}:${name}`)
+    console.log("removing player:", name)
+    SOCKETS.delete(name)
+    let players = await client.lrange(`${room}:players`, 0, -1)
+    if (players.length) {
+      io.to(room).emit("updatePlayers",
+        Array.from(
+          new Set(
+            players.map(p => ({ name: p, score: "TODO" }))
+          )
+        )
+      )
+    } else {
+      client.del(`${room}:game`)
+      client.del(`${room}:players`)
+    }
   })
-});
+})
 
 const getOpenGames = (callback) => {
   var GAMES = []
@@ -271,14 +198,10 @@ const getOpenGames = (callback) => {
       callback(GAMES)
     }
   }
-  console.log("getOpenGames called")
-  client.lrange("openGames", 0, -1, (err, games) => {
-    console.log("redisGames", games)
-    games.forEach(game => {
-      client.lrange(`${game}:players`, 0, -1, (err, players) => {
-        compileGames(game, players.length, games.length, callback)
-      })
-    })
+  let games = await client.lrange("openGames", 0, -1)
+  games.forEach(game => {
+  let players = await client.lrange(`${game}:players`, 0, -1)
+    compileGames(game, players.length, games.length, callback)
   })
 }
 
