@@ -23,7 +23,7 @@ const DECK = {
   black: _.shuffle(deck.black),
   white: _.shuffle(deck.white)
 }
-app.use(cors());
+app.use(cors(corsOptions));
 app.use("/api/user", user);
 const server = require("http").createServer(app);
 const io = require("socket.io")(server);
