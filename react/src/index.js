@@ -97,7 +97,7 @@ io.on("connection", socket => {
     }
   });
 
-  socket.on("startGame", (room, callback) => {
+  socket.on("startGame", async (room, callback) => {
     let numPlayers = await client.llen(`${room}:players`)
     if (numPlayers > MIN_PLAYERS) {
       console.log("startGame", room)
