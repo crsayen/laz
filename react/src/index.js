@@ -5,7 +5,7 @@ import user from "./routes/user";
 import deck from "../deck.js";
 const _ = require("lodash");
 const asyncRedis = require("async-redis");
-const client = asyncRedis.createClient();
+const client = asyncRedis.createClient(6379, '10.128.0.9');
 const bcrypt = require("bcrypt");
 const axios = require("axios");
 const app = require("express")();
@@ -23,7 +23,7 @@ const DECK = {
   black: _.shuffle(deck.black),
   white: _.shuffle(deck.white)
 }
-app.use(cors(corsOptions));
+app.use(cors());
 app.use("/api/user", user);
 const server = require("http").createServer(app);
 const io = require("socket.io")(server);
