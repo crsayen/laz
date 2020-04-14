@@ -1,4 +1,4 @@
-const hostApi = "http://localhost"
+const hostApi = "http://35.223.229.47"
 const portApi = process.env.NODE_ENV === "development" ? 8080 : "";
 const baseURLApi = `${hostApi}${portApi ? `:${portApi}` : ``}`;
 
