@@ -1,4 +1,4 @@
-import "@babel/polyfill";
+//import "@babel/polyfill";
 import cors from "cors";
 import bodyParser from "body-parser";
 import user from "./routes/user";
@@ -7,7 +7,6 @@ const _ = require("lodash");
 const asyncRedis = require("async-redis");
 const client = asyncRedis.createClient(6379, '10.128.0.9');
 const bcrypt = require("bcrypt");
-const axios = require("axios");
 const app = require("express")();
 const port = 8080;
 app.use(bodyParser.json());
