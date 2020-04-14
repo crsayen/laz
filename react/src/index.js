@@ -5,7 +5,7 @@ import user from "./routes/user";
 import deck from "../deck.js";
 const _ = require("lodash");
 const asyncRedis = require("async-redis");
-const client = asyncRedis.createClient();
+const client = asyncRedis.createClient(6379, '10.128.0.9');
 const bcrypt = require("bcrypt");
 const axios = require("axios");
 const app = require("express")();
@@ -17,23 +17,24 @@ app.use(
   })
 );
 const corsOptions = {
-  origin: "localhost:3000"
+  origin: "35.223.229.47:3000"
 };
 const DECK = {
   black: _.shuffle(deck.black),
   white: _.shuffle(deck.white)
 }
-app.use(cors(corsOptions));
+app.use(cors());
 app.use("/api/user", user);
 const server = require("http").createServer(app);
 const io = require("socket.io")(server);
 server.listen(port, "0.0.0.0", () => {
   console.log(`listening on *:${port}`);
 });
-const MAX_PLAYERS = 10; // TODO: put in redis
-client.flushall();
-client.on("error", e => console.error(e));
-var SOCKETS = new Map(); // TODO: put in redis
+const MAX_PLAYERS = 15
+const MIN_PLAYERS = 3
+client.flushall()
+client.on("error", e => console.error(e))
+var SOCKETS = new Map()
 
 io.on("connection", socket => {
 
@@ -41,7 +42,8 @@ io.on("connection", socket => {
     console.log("newGame", room, player)
     if (await client.exists(`${room}:game`)) {
       callback(false);
-    } else {
+    }
+    else {
       await client.hmset(
         `${room}:game`,
         "isPrivate", 0,
@@ -96,9 +98,16 @@ io.on("connection", socket => {
   });
 
   socket.on("startGame", (room, callback) => {
-    console.log("startGame", room)
-    nextRound(room);
-    callback(true);
+    let numPlayers = await client.llen(`${room}:players`)
+    if (numPlayers > MIN_PLAYERS) {
+      console.log("startGame", room)
+      nextRound(room);
+      callback(true);
+    }
+    else {
+      console.log("not enough players to start:", room)
+      callback(false)
+    }
   });
 
   socket.on("chooseWinner", card => {

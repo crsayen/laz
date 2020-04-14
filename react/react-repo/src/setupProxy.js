@@ -3,7 +3,7 @@ module.exports = function(app) {
   app.use(
     '/api',
     createProxyMiddleware({
-      target: 'http://localhost:8080',
+      target: 'http://35.223.229.47:8080',
       changeOrigin: true,
       secure: false,
       logLevel: "debug"
@@ -12,7 +12,7 @@ module.exports = function(app) {
   app.use(
     '/socket.io',
     createProxyMiddleware({
-      target: 'http://localhost:8080',
+      target: 'http://35.223.229.47:8080',
       changeOrigin: true,
       secure: false,
       logLevel: "debug"

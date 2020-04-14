@@ -165,6 +165,8 @@ function Sidebar(props) {
     }
 
     const handleCreateClicked = () => {
+        setIsOpen(false)
+        toggleSidebar(layoutDispatch)
         props.newGame(createGameText)
     }
 
