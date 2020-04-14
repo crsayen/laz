@@ -17,7 +17,7 @@ app.use(
   })
 );
 const corsOptions = {
-  origin: "35.223.229.47:3000"
+  origin: "35.223.229.47:8080"
 };
 const DECK = {
   black: _.shuffle(deck.black),
@@ -37,7 +37,7 @@ client.on("error", e => console.error(e))
 var SOCKETS = new Map()
 
 io.on("connection", socket => {
-
+  console.log(socket.id)
   socket.on("newGame", async (room, player, callback) => {
     console.log("newGame", room, player)
     if (await client.exists(`${room}:game`)) {
