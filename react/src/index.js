@@ -3,9 +3,11 @@ import cors from "cors";
 import bodyParser from "body-parser";
 import user from "./routes/user";
 import deck from "../deck.js";
+const passport = require('passport')
+const LocalStrategy = require('passport-local').Strategy
 const _ = require("lodash");
 const asyncRedis = require("async-redis");
-const client = asyncRedis.createClient(6379, '10.128.0.9');
+const client = asyncRedis.createClient();
 const bcrypt = require("bcrypt");
 const axios = require("axios");
 const app = require("express")();
@@ -23,8 +25,11 @@ const DECK = {
   black: _.shuffle(deck.black),
   white: _.shuffle(deck.white)
 }
-app.use(cors());
-app.use("/api/user", user);
+app.use(cors(corsOptions));
+//app.use("/api/user", user);
+app.use(require('express-session')({ secret: 'keyboard cat', resave: false, saveUninitialized: false }));
+app.use(passport.initialize());
+app.use(passport.session());
 const server = require("http").createServer(app);
 const io = require("socket.io")(server);
 server.listen(port, "0.0.0.0", () => {
@@ -34,6 +39,43 @@ const MAX_PLAYERS = 10; // TODO: put in redis
 client.flushall();
 client.on("error", e => console.error(e));
 var SOCKETS = new Map(); // TODO: put in redis
+
+
+passport.use(new LocalStrategy(
+  (username, password, done) => {
+    console.log(username, password)
+    return done(null, { id: 1, username: 'jack', password: 'secret', displayName: 'Jack', emails: [ { value: 'jack@example.com' } ] })
+  }
+));
+
+passport.serializeUser(function (user, cb) {
+  console.log("serializing user")
+  cb(null, user.id);
+});
+
+passport.deserializeUser(function (id, cb) {
+  console.log("deserializing user")
+  cb(null, { id: 1, username: 'jack', password: 'secret', displayName: 'Jack', emails: [ { value: 'jack@example.com' } ] })
+});
+
+app.post("/api/user/signin/local",
+  passport.authenticate('local', { failureRedirect: '#/login' }),
+  (req, res) => {
+    res.redirect('/')
+  }
+)
+
+app.get('/login', (req, res) => {
+  console.log("hit 8080/login")
+  res.send("you suck, but less")
+})
+
+// app.get('/',
+//   require('connect-ensure-login').ensureLoggedIn(),
+//   (req, res) => {
+
+//   }
+// )
 
 io.on("connection", socket => {
 

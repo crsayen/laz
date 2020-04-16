@@ -15,12 +15,12 @@ export default function App() {
   return (
     <HashRouter>
       <Switch>
-        <Route exact path="/" render={() => <Redirect to="/app/dashboard" />} />
-        <Route
+        <Route exact path="/" render={() => <Redirect to="/login" />} />
+        {/* <Route
           exact
           path="/app"
           render={() => <Redirect to="/app/dashboard" />}
-        />
+        /> */}
         <Route path="/app" render={() => <Layout /> } />
         <PublicRoute path="/login" component={Login} />
         <Route component={Error} />

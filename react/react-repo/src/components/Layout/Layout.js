@@ -15,7 +15,7 @@ const name = Array(10)
     .map(() => Math.floor(Math.random() * 10).toString())
     .join('')
 
-const socket = io.connect('35.223.229.47:8080');
+const socket = io.connect('localhost:8080');
 
 function Layout(props) {
     const classes = useStyles()
@@ -25,6 +25,7 @@ function Layout(props) {
 //    GAME STUFF
 /********************************************************************** */
 
+    const [username, setUsername] = useState('')
     const [winnerName, setWinnerName] = useState('')
     const [allCardsPlayed, setAllCardsPlayed] = useState(false)
     const [winnerCards, setWinnerCards] = useState([{ text: '' }])

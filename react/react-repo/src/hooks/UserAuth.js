@@ -25,23 +25,9 @@ export default function useLoginHandler(history) {
 
   return {
     onLogin(login, password) {
-
-      async function AsyncFunc(login, password) {
-
-        return instance.post("/api/user/signin/local", { email: login, password }, { username: login, password: password })
-
-      }
-      AsyncFunc(login, password).then(res => {
-        let user;
-        const token = res.data.token;
-        user = jwt.decode(token).user;
-        delete user.id;
-        axios.defaults.headers.common["Authorization"] = "Bearer " + token;
-        history.push('/app/dashboard')
-      }).catch((error) => {
-        console.log(error)
-        alert('Invalid username or password. Please try again.');
-      })
+      const postCredsLocal = async (login, password) =>
+        instance.post("/api/user/signin/local", {username: login, password: password})
+      postCredsLocal(login, password)
     },
     onLogout() {
       document.cookie = "token=;expires=Thu, 01 Jan 1970 00:00:01 GMT;";
