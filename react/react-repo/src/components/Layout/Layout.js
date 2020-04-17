@@ -21,6 +21,8 @@ function Layout(props) {
     const classes = useStyles()
     var layoutState = useLayoutState()
 
+    console.log("Layout")
+
 /********************************************************************** */
 //    GAME STUFF
 /********************************************************************** */

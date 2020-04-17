@@ -1,6 +1,6 @@
 import React from "react";
 import {
-  HashRouter,
+  BrowserRouter as Router,
   Route,
   Switch,
   Redirect,
@@ -8,59 +8,38 @@ import {
 import Layout from "./Layout";
 import Error from "../pages/error";
 import Login from "../pages/login";
+import useLoginHandler from "../hooks/UserAuth";
 
-export default function App() {
+export default function App(props) {
+  const { checkLoggedIn } = useLoginHandler(props.history)
   const trueme = true;
 
+  const PrivateRoute = ({ component: Component, ...rest }) => (
+    <Route {...rest} render={(props) => (
+      checkLoggedIn(success =>
+      {
+        console.log("privateroute", success)
+        return success
+          ? <Layout {...props} />
+          : <Redirect to='/login' />
+      })
+    )} />
+  )
+
+
   return (
-    <HashRouter>
+    <Router>
       <Switch>
-        <Route exact path="/" render={() => <Redirect to="/login" />} />
+        <Route path="/" render={() => <Redirect to="/app" />} />
         {/* <Route
           exact
           path="/app"
           render={() => <Redirect to="/app/dashboard" />}
         /> */}
-        <Route path="/app" render={() => <Layout /> } />
-        <PublicRoute path="/login" component={Login} />
+        <PrivateRoute path="/app" component={Layout} />
+        <Route path="/login" component={Login} />
         <Route component={Error} />
       </Switch>
-    </HashRouter>
+    </Router>
   );
-
-  // #######################################################################
-// eslint-disable-next-line
-  function PrivateRoute({ component, ...rest }) {
-    return (
-      <Route
-        {...rest}
-        render={props =>
-          trueme ? (
-            React.createElement(component, props)
-          ) : (
-            <Redirect to={"/login"} />
-          )
-        }
-      />
-    );
-  }
-
-  function PublicRoute({ component, ...rest }) {
-    return (
-      <Route
-        {...rest}
-        render={props =>
-          !trueme ? (
-            <Redirect
-              to={{
-                pathname: "/"
-              }}
-            />
-          ) : (
-            React.createElement(component, props)
-          )
-        }
-      />
-    );
-  }
 }
