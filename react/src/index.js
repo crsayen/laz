@@ -40,64 +40,42 @@ client.flushall();
 client.on("error", e => console.error(e));
 var SOCKETS = new Map(); // TODO: put in redis
 
-let users = {
-  chris: { id: 'chris', password: 'chrispass' },
-  alex: { id: 'alex', password: 'alexpass' },
-  shea: { id: 'shea', password: 'sheapass' }
-}
-
-const validateUser = async (username, password) => { //TODO
-  return username in users && users[username].password === password
-    ? users[username]
-    : false
-}
-
-const getUserFromID = async (id) => {
-  return users[id] // TODO
-}
 
 passport.use(new LocalStrategy(
-  async (username, password, done) => {
-    console.log("passport", username, password)
-    return done(
-      null,
-      await validateUser(username, password)
-    )
+  (username, password, done) => {
+    console.log(username, password)
+    return done(null, { id: 1, username: 'jack', password: 'secret', displayName: 'Jack', emails: [ { value: 'jack@example.com' } ] })
   }
 ));
 
-passport.serializeUser((user, cb) => {
+passport.serializeUser(function (user, cb) {
   console.log("serializing user")
   cb(null, user.id);
 });
 
-passport.deserializeUser(async (id, cb) => {
+passport.deserializeUser(function (id, cb) {
   console.log("deserializing user")
-  cb(null, await getUserFromID(id))
+  cb(null, { id: 1, username: 'jack', password: 'secret', displayName: 'Jack', emails: [ { value: 'jack@example.com' } ] })
 });
 
 app.post("/api/user/signin/local",
-  passport.authenticate('local', { failureRedirect: '/login' }),
+  passport.authenticate('local', { failureRedirect: '#/login' }),
   (req, res) => {
-    console.log("hit api login")
-    res.redirect('/app')
+    res.redirect('/')
   }
 )
 
-app.post("/api/user/newUser/local",
-  passport.authenticate('local', { failureRedirect: '/login' }),
-  (req, res) => {
-    res.redirect('/app')
-  }
-)
-
-app.get('/api/user/validate', (req, res) => {
-  console.log(req.isAuthenticated)
-  console.log(req.isAuthenticated())
-  !(!req.isAuthenticated || !req.isAuthenticated())
-    ? res.send(true)
-    : res.send(false)
+app.get('/login', (req, res) => {
+  console.log("hit 8080/login")
+  res.send("you suck, but less")
 })
+
+// app.get('/',
+//   require('connect-ensure-login').ensureLoggedIn(),
+//   (req, res) => {
+
+//   }
+// )
 
 io.on("connection", socket => {
 

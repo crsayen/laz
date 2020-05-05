@@ -19,25 +19,19 @@ function alert(data) {
   })
 };
 
-export default function useLoginHandler() {
+export default function useLoginHandler(history) {
   console.log('i hit login')
 
 
   return {
-    checkLoggedIn(cb) {
-      console.log("checkLoggedIn")
-      instance.get('/api/user/validate')
-        .then(res => {
-          console.log('checkLoggedInCallback', res.data)
-          cb(res.data)
-        })
-    },
     onLogin(login, password) {
-      console.log("onLogin")
-      instance.post("/api/user/signin/local", {username: login, password: password})
+      const postCredsLocal = async (login, password) =>
+        instance.post("/api/user/signin/local", {username: login, password: password})
+      postCredsLocal(login, password)
     },
     onLogout() {
       document.cookie = "token=;expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+      history.push("/login");
     },
   }
 }

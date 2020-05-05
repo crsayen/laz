@@ -42,8 +42,8 @@ function Login(props) {
   // eslint-disable-next-line
   var [error, setError] = useState(null);
   var [activeTabId, setActiveTabId] = useState(0);
-  var [loginValue, setLoginValue] = useState("chris");
-  var [passwordValue, setPasswordValue] = useState("chrispass");
+  var [loginValue, setLoginValue] = useState("admin@rs-ll.com");
+  var [passwordValue, setPasswordValue] = useState("password");
   const { onLogin } = useLoginHandler(props.history)
 
   const handleSubmit = (event) => {
@@ -97,7 +97,7 @@ function Login(props) {
                 onChange={e => setLoginValue(e.target.value)}
                 margin="normal"
                 placeholder="Email Adress"
-                type="text"
+                type="email"
                 fullWidth
               />
               <Input
@@ -135,7 +135,7 @@ function Login(props) {
               </form>
             </React.Fragment>
           )}
-
+         
         </div>
       </div>
     </Grid>
