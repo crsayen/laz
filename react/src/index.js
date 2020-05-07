@@ -41,6 +41,10 @@ client.on("error", e => console.error(e));
 var SOCKETS = new Map(); // TODO: put in redis
 
 
+
+/*******************************************************************
+      auth stuff that we aren't talking about just yet
+ */
 passport.use(new LocalStrategy(
   (username, password, done) => {
     console.log(username, password)
@@ -69,13 +73,10 @@ app.get('/login', (req, res) => {
   console.log("hit 8080/login")
   res.send("you suck, but less")
 })
+/**********************************************************************************
+ * ********************************************************************************
+ */
 
-// app.get('/',
-//   require('connect-ensure-login').ensureLoggedIn(),
-//   (req, res) => {
-
-//   }
-// )
 
 io.on("connection", socket => {
 
