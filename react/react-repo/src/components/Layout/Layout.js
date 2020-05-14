@@ -10,6 +10,11 @@ import { SocketProvider } from 'socket.io-react';
 import io from 'socket.io-client';
 
 
+// TODO: black card not showing up for player joining in middle of a game
+// user should not be able to participate in ongoing round
+
+// TODO: after a player has played 'pick' number of cards, hide 'play card' button
+
 const name = Array(10)
     .fill(null)
     .map(() => Math.floor(Math.random() * 10).toString())
@@ -67,6 +72,10 @@ function Layout(props) {
                 console.error("failed to join game")
             }
         })
+    }
+
+    const pickUsername = (name) => {
+        socket.emit('usernameSelected', name, success => success ? "it woerkd!" : "your name is taken")
     }
 
     const startGame = () => {
@@ -133,6 +142,7 @@ function Layout(props) {
             <Header history={props.history} />
             <Sidebar
                 newGame={newGame}
+                pickUsername={pickUsername}
                 joinGame={joinGame}
                 openGames={openGames}
                 fetchGames={fetchGames}

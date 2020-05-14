@@ -45,34 +45,34 @@ var SOCKETS = new Map(); // TODO: put in redis
 /*******************************************************************
       auth stuff that we aren't talking about just yet
  */
-passport.use(new LocalStrategy(
-  (username, password, done) => {
-    console.log(username, password)
-    return done(null, { id: 1, username: 'jack', password: 'secret', displayName: 'Jack', emails: [ { value: 'jack@example.com' } ] })
-  }
-));
+// passport.use(new LocalStrategy(
+//   (username, password, done) => {
+//     console.log(username, password)
+//     return done(null, { id: 1, username: 'jack', password: 'secret', displayName: 'Jack', emails: [ { value: 'jack@example.com' } ] })
+//   }
+// ));
 
-passport.serializeUser(function (user, cb) {
-  console.log("serializing user")
-  cb(null, user.id);
-});
+// passport.serializeUser(function (user, cb) {
+//   console.log("serializing user")
+//   cb(null, user.id);
+// });
 
-passport.deserializeUser(function (id, cb) {
-  console.log("deserializing user")
-  cb(null, { id: 1, username: 'jack', password: 'secret', displayName: 'Jack', emails: [ { value: 'jack@example.com' } ] })
-});
+// passport.deserializeUser(function (id, cb) {
+//   console.log("deserializing user")
+//   cb(null, { id: 1, username: 'jack', password: 'secret', displayName: 'Jack', emails: [ { value: 'jack@example.com' } ] })
+// });
 
-app.post("/api/user/signin/local",
-  passport.authenticate('local', { failureRedirect: '#/login' }),
-  (req, res) => {
-    res.redirect('/')
-  }
-)
+// app.post("/api/user/signin/local",
+//   passport.authenticate('local', { failureRedirect: '#/login' }),
+//   (req, res) => {
+//     res.redirect('/')
+//   }
+// )
 
-app.get('/login', (req, res) => {
-  console.log("hit 8080/login")
-  res.send("you suck, but less")
-})
+// app.get('/login', (req, res) => {
+//   console.log("hit 8080/login")
+//   res.send("you suck, but less")
+// })
 /**********************************************************************************
  * ********************************************************************************
  */
