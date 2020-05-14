@@ -20,7 +20,7 @@ const name = Array(10)
     .map(() => Math.floor(Math.random() * 10).toString())
     .join('')
 
-const socket = io.connect('localhost:8080');
+const socket = io.connect('localhost:8090');
 
 function Layout(props) {
     const classes = useStyles()

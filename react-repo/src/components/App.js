@@ -1,6 +1,6 @@
 import React from "react";
 import {
-  HashRouter,
+  BrowserRouter,
   Route,
   Switch,
   Redirect,
@@ -13,7 +13,7 @@ export default function App() {
   const trueme = true;
 
   return (
-    <HashRouter>
+    <BrowserRouter>
       <Switch>
         <Route exact path="/" render={() => <Redirect to="/app/dashboard" />} />
         {/* <Route
@@ -25,7 +25,7 @@ export default function App() {
         <PublicRoute path="/login" component={Login} />
         <Route component={Error} />
       </Switch>
-    </HashRouter>
+    </BrowserRouter>
   );
 
   // #######################################################################

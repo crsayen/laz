@@ -11,27 +11,33 @@ const client = asyncRedis.createClient();
 const bcrypt = require("bcrypt");
 const axios = require("axios");
 const app = require("express")();
-const port = 8080;
+const port = 8090;
+require('dotenv').config();
+
+app.use(function(req, res, next) {
+  res.setHeader('Access-Control-Allow-Origin', req.header('origin') 
+|| req.header('x-forwarded-host') || req.header('referer') || req.header('host'));
+  next();
+ });
 app.use(bodyParser.json());
 app.use(
   bodyParser.urlencoded({
     extended: true
   })
 );
-const corsOptions = {
-  origin: "localhost:3000"
-};
 const DECK = {
   black: _.shuffle(deck.black),
   white: _.shuffle(deck.white)
 }
-app.use(cors(corsOptions));
+app.use(cors());
 //app.use("/api/user", user);
+console.log(process.env.NODE_ENV)
 app.use(require('express-session')({ secret: 'keyboard cat', resave: false, saveUninitialized: false }));
 app.use(passport.initialize());
 app.use(passport.session());
 const server = require("http").createServer(app);
 const io = require("socket.io")(server);
+//if (process.env.NODE_ENV == "development") { io.set('origins', 'http://localhost:3000'); };
 server.listen(port, "0.0.0.0", () => {
   console.log(`listening on *:${port}`);
 });

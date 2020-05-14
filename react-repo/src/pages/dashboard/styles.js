@@ -45,7 +45,7 @@ export default makeStyles(theme => ({
         [theme.breakpoints.down("xl")]: {
             width: "25%"
         },
-        [theme.breakpoints.down("lg")]: {
+        [theme.breakpoints.down("lg")]: { 
             width: "25%"
         },
         [theme.breakpoints.down("md")]: {
@@ -78,6 +78,20 @@ export default makeStyles(theme => ({
         // eslint-disable-next-line
         width: 'max-content',
     },
+    turncard: {
+        padding: '6px',
+        margin: '0, auto',
+        color: "gray",
+          borderRadius: '13px',
+          // eslint-disable-next-line
+          width: 'intrinsic' /* Safari/WebKit uses a non-standard name */,
+          // eslint-disable-next-line
+          width: '-moz-max-content' /* Firefox/Gecko */,
+          // eslint-disable-next-line
+          width: '-webkit-max-content' /* Chrome */,
+          // eslint-disable-next-line
+          width: 'max-content',
+      },
     controot: {
         paddingRight: 0,
         paddingLeft: 0,
@@ -126,6 +140,16 @@ export default makeStyles(theme => ({
         height: '95px'
          },
     },
+    waitingCardContent: {
+        margin: "0, auto",
+        'overflow-y': 'auto',
+        'touch-action': 'pan-y',
+        height: '100%',
+      width: '145px',
+      justifyContent: 'center',
+      // eslint-disable-next-line
+      height: '95px'
+    },
     bullet: {
         display: 'inline-block',
         margin: '0 2px',
@@ -134,4 +158,8 @@ export default makeStyles(theme => ({
     title: {
         fontSize: 14,
     },
+    center: {
+        display: "inline-block",
+        margin: "0, auto"
+    }
 }))

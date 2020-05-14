@@ -3,13 +3,14 @@ import React, { useState, useEffect } from 'react'
 // eslint-disable-next-line
 import { Grid, Box, Fab } from '@material-ui/core'
 import Icon from '@mdi/react'
-import { mdiSettings as SettingsIcon } from '@mdi/js'
+import { mdiSettings as SettingsIcon, mdiWeatherLightning } from '@mdi/js'
 // eslint-disable-next-line
 import axios from 'axios'
 import useStyles from './styles'
 // eslint-disable-next-line
 import Flickity from 'react-flickity-component'
 import 'flickity/css/flickity.css'
+import CircularProgress from '@material-ui/core/CircularProgress';
 // eslint-disable-next-line
 import {
     Chip,
@@ -44,8 +45,8 @@ function Dashboard(props) {
             icon: 'success',
             timer: 7000,
             width: '20rem',
-            showCancelButton: false,
-            confirmButtonText: 'Ok',
+            showConfirmButton: false,
+            timer: 1500
         }).then(() => {
             props.socket.emit('ready')
             setWinnerDialogOpen(false)
@@ -60,8 +61,8 @@ function Dashboard(props) {
                 icon: 'success',
                 timer: 2000,
                 width: '20rem',
-                showCancelButton: false,
-                confirmButtonText: 'Ok'
+                showConfirmButton: false,
+                timer: 1500
             }
         ).then(() => {
             props.setGameJoined(false)
@@ -220,6 +221,36 @@ function Dashboard(props) {
                             >
                                 Cards in Play
                             </Typography>
+                            {renderIf(
+                                    props.myTurn && props.userCards.length === 0,
+                                    <Container classes={{ root: classes.controot }}>
+                                    <div className="carousel-holder">
+                                        <Flickity
+                                            options={flickityOptions}
+                                            reloadOnUpdate
+                                        >
+                                                <Card
+                                                    key={"MyTurn"}
+                                                    className={classes.turncard}
+                                                >
+                                                    <CardContent>
+                                                        <div className={classes.center}> {/* TODO  for IAN, fix css please. make it centered or look pretty. idc*/}
+                                                        <Typography
+                                                            className={classes.waitingCardContent}
+                                                            color="textSecondary"
+                                                        >
+                                                            {"Waiting..."}
+                                                       
+                                                        </Typography>
+                                                        <CircularProgress />
+                                                        </div>
+                                                    </CardContent>
+                                                </Card>
+                                        </Flickity>
+                                    </div>
+                                </Container>
+
+                            )}
                             <Container classes={{ root: classes.controot }}>
                                 <div className="carousel-holder">
                                     <Flickity
@@ -292,7 +323,36 @@ function Dashboard(props) {
                         </Grid>
                         <Grid item lg={12} sm={12} xs={12}>
                             <Divider variant="middle" />
-                            <Typography
+                            {renderIf(
+                                    props.myTurn,
+                                    <Container classes={{ root: classes.controot }}>
+                                    <div className="carousel-holder">
+                                        <Flickity
+                                            options={flickityOptions}
+                                            reloadOnUpdate
+                                        >
+                                                <Card
+                                                    key={"MyTurn"}
+                                                    className={classes.turncard}
+                                                >
+                                                    <CardContent>
+                                                        <Typography
+                                                            className={classes.pos}
+                                                            color="textSecondary"
+                                                        >
+                                                            {"Its you turn! Please select a card from above."}
+                                                        </Typography>
+                                                    </CardContent>
+                                                </Card>
+                                        </Flickity>
+                                    </div>
+                                </Container>
+
+                            )}
+                            {renderIf(
+                                    !props.myTurn,
+                                    <>
+                                     <Typography
                                 colorBrightness="hint"
                                 variant="caption"
                                 style={{ textAlign: 'center' }}
@@ -346,6 +406,8 @@ function Dashboard(props) {
                                     </Flickity>
                                 </div>
                             </Container>
+                            </>
+                            )}
                         </Grid>
                     </Grid>
                 </Grid>
