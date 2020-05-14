@@ -124,27 +124,33 @@ function Sidebar(props) {
         setIsCreateOpen(true)
         setAnchorElTwo(event.currentTarget)
     }
+
     function joinGameClick(event) {
         setIsOpen(true)
         setAnchorEl(event.currentTarget)
     }
+
     const joinGameClose = () => {
         setIsOpen(false)
         setAnchorEl(null)
     }
+
     const createGameClose = () => {
         setIsCreateOpen(false)
         setAnchorElTwo(null)
     }
+
     function joinGame(event, data) {
         setSelectedGame(data.name)
         setJoinGameOpen(true)
         setAnchorElThree(event.currentTarget)
     }
+
     const joinGameCloseTwo = () => {
         setJoinGameOpen(false)
         setAnchorElThree(null)
     }
+
     const handleChange = (event, newValue) => {
         props.fetchGames()
         setValue(newValue)
@@ -158,6 +164,7 @@ function Sidebar(props) {
     }
 
     const handleJoinClicked = () => {
+        // TODO: a popup that asks the user for a name props
         setJoinGameOpen(false)
         setIsOpen(false)
         toggleSidebar(layoutDispatch)
@@ -165,6 +172,7 @@ function Sidebar(props) {
     }
 
     const handleCreateClicked = () => {
+        // TODO: a popup that asks the user for a name
         props.newGame(createGameText)
     }
 
