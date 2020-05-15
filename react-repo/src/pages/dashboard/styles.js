@@ -45,7 +45,7 @@ export default makeStyles(theme => ({
         [theme.breakpoints.down("xl")]: {
             width: "25%"
         },
-        [theme.breakpoints.down("lg")]: { 
+        [theme.breakpoints.down("lg")]: {
             width: "25%"
         },
         [theme.breakpoints.down("md")]: {
@@ -67,7 +67,7 @@ export default makeStyles(theme => ({
     mycard: {
       padding: '6px',
       margin: '6px',
-      
+
         borderRadius: '13px',
         // eslint-disable-next-line
         width: 'intrinsic' /* Safari/WebKit uses a non-standard name */,
@@ -140,15 +140,18 @@ export default makeStyles(theme => ({
         height: '95px'
          },
     },
+    waitingCard: {
+        textAlign: "center",
+    },
     waitingCardContent: {
         margin: "0, auto",
         'overflow-y': 'auto',
         'touch-action': 'pan-y',
         height: '100%',
-      width: '145px',
-      justifyContent: 'center',
-      // eslint-disable-next-line
-      height: '95px'
+        width: '145px',
+        justifyContent: 'center',
+        // eslint-disable-next-line
+        height: '95px',
     },
     bullet: {
         display: 'inline-block',
@@ -159,7 +162,6 @@ export default makeStyles(theme => ({
         fontSize: 14,
     },
     center: {
-        display: "inline-block",
-        margin: "0, auto"
+        textAlign: "center",
     }
 }))

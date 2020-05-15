@@ -3,19 +3,15 @@ import cors from "cors";
 import bodyParser from "body-parser";
 import user from "./routes/user";
 import deck from "../deck.js";
-const passport = require('passport')
-const LocalStrategy = require('passport-local').Strategy
 const _ = require("lodash");
 const asyncRedis = require("async-redis");
 const client = asyncRedis.createClient();
-const bcrypt = require("bcrypt");
-const axios = require("axios");
 const app = require("express")();
 const port = 8090;
 require('dotenv').config();
 
 app.use(function(req, res, next) {
-  res.setHeader('Access-Control-Allow-Origin', req.header('origin') 
+  res.setHeader('Access-Control-Allow-Origin', req.header('origin')
 || req.header('x-forwarded-host') || req.header('referer') || req.header('host'));
   next();
  });
@@ -33,8 +29,6 @@ app.use(cors());
 //app.use("/api/user", user);
 console.log(process.env.NODE_ENV)
 app.use(require('express-session')({ secret: 'keyboard cat', resave: false, saveUninitialized: false }));
-app.use(passport.initialize());
-app.use(passport.session());
 const server = require("http").createServer(app);
 const io = require("socket.io")(server);
 //if (process.env.NODE_ENV == "development") { io.set('origins', 'http://localhost:3000'); };
@@ -46,66 +40,55 @@ client.flushall();
 client.on("error", e => console.error(e));
 var SOCKETS = new Map(); // TODO: put in redis
 
+// TODO: make it so that you can press enter to 'create' in new-game popup
+// TODO: when someone joins, do a popup that introduces the player to everyone
+// TODO: PARTIAL FIX - old game continues to display after player joins a new game
+// TODO: after changing game rooms, player is czar twice before it switches czars
+// TODO: number of players not changing in games list
+// TODO: unstable flush: https://lazaretto.slack.com/archives/D010RBXBL75/p1589509841001400
 
-
-/*******************************************************************
-      auth stuff that we aren't talking about just yet
- */
-// passport.use(new LocalStrategy(
-//   (username, password, done) => {
-//     console.log(username, password)
-//     return done(null, { id: 1, username: 'jack', password: 'secret', displayName: 'Jack', emails: [ { value: 'jack@example.com' } ] })
-//   }
-// ));
-
-// passport.serializeUser(function (user, cb) {
-//   console.log("serializing user")
-//   cb(null, user.id);
-// });
-
-// passport.deserializeUser(function (id, cb) {
-//   console.log("deserializing user")
-//   cb(null, { id: 1, username: 'jack', password: 'secret', displayName: 'Jack', emails: [ { value: 'jack@example.com' } ] })
-// });
-
-// app.post("/api/user/signin/local",
-//   passport.authenticate('local', { failureRedirect: '#/login' }),
-//   (req, res) => {
-//     res.redirect('/')
-//   }
-// )
-
-// app.get('/login', (req, res) => {
-//   console.log("hit 8080/login")
-//   res.send("you suck, but less")
-// })
-/**********************************************************************************
- * ********************************************************************************
- */
+ /*********************************************************************************
+  * ** REDIS SCHEMA **
+  * //TODO: this schema likely requires some re-working. It isn't ideal. It was improvised without forthought
+  * <room>:game             hash
+  *   blackCursor           int       keeps track of which black card the game is on
+  *   whiteCursor           int       keeps track of which white card the game is on
+  *   numberOfCardsPlayed   int       self explanatory
+  *   numberOfPlayersReady  int       self explanatory //TODO: rather than keeping a counter, give <game>:player a 'ready' field and count them
+  *   pick                  int       how many white cards each player must submit
+  *   started               bool      whether the game has started or not //TODO: actually utilize this. we dont touch it.
+  *   owner                 string    the name of the player who started the game
+  *
+  * <room>:players          list      a list of the names of the players in the game
+  *
+  * <room>:player           hash
+  *   cards                 list      a list of the players cards, JSON.stringified
+  *   playedCards           list      a list of the cards the player has submitted, JSON.stringified
+  */
 
 
 io.on("connection", socket => {
 
   socket.on("newGame", async (room, player, callback) => {
-    console.log("newGame", room, player)
+    console.log(`new game ${room}, started by ${player}`)
     if (await client.exists(`${room}:game`)) {
       callback(false);
     } else {
       await client.hmset(
         `${room}:game`,
-        "isPrivate", 0,
         "blackCursor", 0,
         "whiteCursor", 0,
         "numberOfcardsPlayed", 0,
         "numberOfPlayersReady", 0,
         "pick", 7,
-        "started", 0
+        "started", 0,
+        "owner", player
       )
-      addPlayer(room, player, false, socket, async (success) => {
-        if (success) {
+      addPlayer(room, player, false, socket, async (data) => {
+        if (data) {
           client.rpush('openGames', room)
           console.log("new game:", room)
-          callback(true)
+          callback(data)
           return
         }
         callback(false)
@@ -113,57 +96,38 @@ io.on("connection", socket => {
     }
   })
 
-  socket.on("makePrivate", async (room, password, callback) => {
-    console.log("makePrivate", room, password, callback);
-    if (! await client.exists(`${room}:game`)) {
-      callback(false);
-    } else {
-      console.log("exists");
-      bcrypt.hash(password, 10, (err, hash) => {
-        if (err) console.error(err);
-        client.hmset(`${room}:game`, "password", hash, "isPrivate", 1);
-        callback(true);
-      });
-    }
-  });
-
   socket.on("getOpenGames", getOpenGames)
 
   socket.on("joinGame", async (room, player, callback) => {
-    console.log("joinGame", room, player)
+    console.log(`${player} joined ${room}`)
     if (await client.exists(`${room}:game`)) {
-      let [isPrivate, started, hash] = await client.hmget(
-        `${room}:game`,
-        "isPrivate",
-        "started",
-        "password",
-      )
+      let started = await client.hget(`${room}:game`,'started')
       addPlayer(room, player, !!parseInt(started), socket, callback);
     } else {
       callback(false);
     }
   });
 
-  socket.on("startGame", (room, callback) => {
-    console.log("startGame", room)
+  socket.on("startGame", async (room, callback) => {
+    console.log(`starting ${room}`)
+    await client.hset(`${room}:game`, 'started', true)
     nextRound(room);
     callback(true);
+    io.to(room).emit('gameStarted', true)
   });
 
   socket.on("chooseWinner", card => {
-    console.log("chooseWinner", card)
+    console.log(`winner: ${card}`)
     io.to(socket.rooms[0]).emit("winnerSelected", card);
     nextRound(socket.rooms[0]);
   });
 
   socket.on("playWhiteCard", async (card, player, callback) => {
-    console.log("chooseWhiteCard", card, player)
+    console.log(`${player} chose "${card.text}"`)
     const room = Object.keys(socket.rooms)[1];
     let cards = await getPlayerCards(room, player)
     console.log("preFiltrer", cards)
-    setPlayerCards(room, player, cards.filter(c => c.text != card.text), (cards) => {
-      console.log("postFilter", cards)
-    })
+    setPlayerCards(room, player, cards.filter(c => c.text != card.text))
     let numberOfCardsPlayed = await client.hincrby(`${room}:game`, "numberOfCardsPlayed", 1)
     let pick = await client.hget(`${room}:game`, "pick")
     let playedCardsString = await client.hget(`${room}:${player}`, "playedCards")
@@ -206,7 +170,7 @@ io.on("connection", socket => {
     }
   })
 
-  socket.on("chooseWhiteCard", async (data, callback) => {
+  socket.on("chooseWhiteCard", async (data) => {
     const room = Object.keys(socket.rooms)[1]
     let numberOfChosenCards =
       await client.lpush(`${room}:winningCards`, JSON.stringify(data.card))
@@ -265,9 +229,9 @@ const getOpenGames = async (callback) => {
 }
 
 const addPlayer = async (room, player, started, socket, callback) => {
-  console.log("adding:", player, "room:", room);
+  console.log(`adding ${player} to ${room}`);
   let len = await client.llen(`${room}:players`)
-
+  let owner = await client.hget(`${room}:game`, 'owner')
   if (len > MAX_PLAYERS) {
     client.rpop(`${room}:players`)
     callback(false);
@@ -277,6 +241,8 @@ const addPlayer = async (room, player, started, socket, callback) => {
     client.hmset(`${room}:${player}`, "playedCards", "[]", "cards", "[]");
     client.hmset(`${socket.id}`, 'name', player, 'room', room)
     SOCKETS.set(player, socket);
+    console.log('started', started)
+    socket.emit('gameStarted', started)
     socket.join(room, async () => {
       dealWhiteCards(room, player)
       let players = await client.lrange(`${room}:players`, 0, -1)
@@ -288,13 +254,14 @@ const addPlayer = async (room, player, started, socket, callback) => {
         )
       )
     })
-    callback(true);
+    callback({id: room, owner: owner, started: started});
   }
 };
 
 const nextCzar = async (room) => {
   let czar = await client.lpop(`${room}:players`)
   client.rpush(`${room}:players`, czar);
+  console.log("next czar", czar)
   return czar
 };
 
@@ -316,7 +283,7 @@ const drawCards = async (filterfn, room, color, n) => {
 const wfilter = (card) => !card.text.includes('*')
 const bfilter = (card) => card.pick < 2
 
-const setPlayerCards = (room, player, cards, callback) => {
+const setPlayerCards = (room, player, cards) => {
   client.hset(`${room}:${player}`, "cards", JSON.stringify(cards))
 }
 
@@ -326,11 +293,11 @@ const getPlayerCards = async (room, player) => {
 }
 
 const dealWhiteCards = async (room, player, callback) => {
-  console.log("dealWhiteCards", room, player)
+  console.log(`dealing white cards to ${player} in ${room}`)
   let cards = await getPlayerCards(room, player)
-  console.log("player cards", cards)
+  console.log(`${player} has ${cards.length} cards`)
   let newCards = await drawCards(wfilter, room, "white", 7 - cards.length)
-  console.log("newCards", newCards)
+  console.log(`${player} will get ${newCards.length} new cards`)
   let cardsDealt = [...cards, ...newCards]
   setPlayerCards(room, player, cardsDealt)
   SOCKETS.get(player).emit("dealWhite", cardsDealt)
@@ -338,7 +305,7 @@ const dealWhiteCards = async (room, player, callback) => {
 }
 
 const dealBlackCard = async (room, callback) => {
-  console.log("dealBlackCard", room)
+  console.log(`dealing black card to ${room}`)
   let _black = await drawCards(bfilter, room, "black", 1)
   const black = _black[0]
   client.hset(`${room}:game`, 'pick', black.pick)

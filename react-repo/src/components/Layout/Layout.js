@@ -45,7 +45,8 @@ function Layout(props) {
     const [openGames, setOpenGames] = useState([])
     const [gameJoined, setGameJoined] = useState(false)
     const [players, setPlayers] = useState([])
-
+    const [gameOwner, setGameOwner] = useState(null)
+    const [gameStarted, setGameStarted] = useState(false)
 
     useEffect(() => {
         let newCards = userCards.slice().concat(_userCard)
@@ -54,19 +55,23 @@ function Layout(props) {
 
     const newGame = (id) => {
         console.log("new game:",id)
-        socket.emit('newGame', id, name, success => {
+        socket.emit('newGame', id, name, gameInfo => { // {id, owner, started }
             console.log("newGameCallback")
-            success
-                ? setgameID(id)
-                : console.error("failed to create game") // TODO 
+            if (gameInfo) {
+                setgameID(gameInfo.id)
+                setGameOwner(gameInfo.owner)
+            } else {
+                console.error("failed to create game") // TODO
+            }
             console.log("gameID", gameID)
         })
     }
 
     const joinGame = (id) => {
-        socket.emit('joinGame', id, name, success => {
-            if (success) {
-                setgameID(id)
+        socket.emit('joinGame', id, name, gameInfo => {
+            if (gameInfo) {
+                setgameID(gameInfo.id)
+                setGameOwner(gameInfo.owner)
                 setGameJoined(true)
             } else {
                 console.error("failed to join game")
@@ -75,7 +80,7 @@ function Layout(props) {
     }
 
     const pickUsername = (name) => {
-        socket.emit('usernameSelected', name, success => success ? "it woerkd!" : "your name is taken")
+        socket.emit('usernameSelected', name, success => success ? "it worked!" : "your name is taken")
     }
 
     const startGame = () => {
@@ -83,7 +88,7 @@ function Layout(props) {
     }
 
     const selectCard = card => {
-        socket.emit('chooseWhiteCard', card, console.log)
+        socket.emit('chooseWhiteCard', card)
     }
 
     const playCard = (e, playedCard) => {
@@ -115,6 +120,7 @@ function Layout(props) {
         socket.on('connect', fetchGames);
         socket.on('dealWhite', doSetMyCards)
         socket.on('dealBlack', setBlackCard)
+        socket.on('gameStarted', setGameStarted)
         socket.on('newCzar', setCzar)
         socket.on('myTurn', setMyTurn)
         socket.on('updatePlayers', updatePlayers)
@@ -178,6 +184,7 @@ function Layout(props) {
                                 playCard={playCard}
                                 gameJoined={gameJoined}
                                 setGameJoined={setGameJoined}
+                                gameStarted={gameStarted}
                                 {...props}
                             />
                         }

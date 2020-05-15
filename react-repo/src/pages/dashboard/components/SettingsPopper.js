@@ -14,7 +14,7 @@ function SettingsPopper({ open, id, anchorEl, newGame, joinGame, startGame, prop
       id={id}
       open={open}
       anchorEl={anchorEl}
-      placement={"left-start"} 
+      placement={"left-start"}
       style={{ zIndex: 100 }}
       elevation={4}
     >
@@ -31,7 +31,7 @@ function SettingsPopper({ open, id, anchorEl, newGame, joinGame, startGame, prop
             </Typography>
               <Box display="flex" justifyContent="space-between">
               <Button style={{ margin: 5 }} color="primary" variant="contained" disabled={true} onClick={() => newGame()} >New</Button>
-              <Button style={{ margin: 5 }} color="primary" variant="contained" disabled={true} onClick={() => startGame()}>Start</Button>
+              <Button style={{ margin: 5 }} color="primary" variant="contained" disabled={false} onClick={() => startGame()}>Start</Button>
               </Box>
           </>
           <Divider style={{ width: "100%", margin: "8px 0 16px 0" }} />

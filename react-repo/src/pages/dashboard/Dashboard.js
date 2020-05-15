@@ -119,6 +119,7 @@ function Dashboard(props) {
                 props={props}
             />
             <Grid container justify="center" alignItems="center" spacing={2}>
+                { props.gameStarted ? (
                 <Grid item lg={12} sm={12} xs={12}>
                     <Grid
                         container
@@ -214,16 +215,18 @@ function Dashboard(props) {
 
                         <Grid item lg={12} sm={12} xs={12}>
                             <Divider variant="middle" />
-                            <Typography
-                                colorBrightness="hint"
-                                variant="caption"
-                                style={{ textAlign: 'center' }}
-                                noWrap
-                            >
-                                Cards in Play
-                            </Typography>
+
                             {renderIf(
                                     props.myTurn && props.userCards.length === 0,
+                                    <>
+                                    <Typography
+                                    colorBrightness="hint"
+                                    variant="caption"
+                                    style={{ textAlign: 'center' }}
+                                    noWrap
+                                >
+                                    Cards in Play
+                                </Typography>
                                     <Container classes={{ root: classes.controot }}>
                                     <div className="carousel-holder">
                                         <Flickity
@@ -234,24 +237,32 @@ function Dashboard(props) {
                                                     key={"MyTurn"}
                                                     className={classes.turncard}
                                                 >
-                                                    <CardContent>
-                                                        <div className={classes.center}> {/* TODO  for IAN, fix css please. make it centered or look pretty. idc*/}
+                                                    <CardContent className={classes.waitingCard}>
                                                         <Typography
                                                             className={classes.waitingCardContent}
                                                             color="textSecondary"
                                                         >
-                                                            {"Waiting..."}
-                                                       
+                                                            Waiting...
                                                         </Typography>
-                                                        <CircularProgress />
-                                                        </div>
+                                                        <CircularProgress/>
                                                     </CardContent>
                                                 </Card>
                                         </Flickity>
                                     </div>
                                 </Container>
-
+                                </>
                             )}
+                             {renderIf(
+                                 props.userCards.length > 0,
+                                 <>
+                                 <Typography
+                                 colorBrightness="hint"
+                                 variant="caption"
+                                 style={{ textAlign: 'center' }}
+                                 noWrap
+                             >
+                                 Cards in Play
+                             </Typography>
                             <Container classes={{ root: classes.controot }}>
                                 <div className="carousel-holder">
                                     <Flickity
@@ -321,11 +332,12 @@ function Dashboard(props) {
                                     </Flickity>
                                 </div>
                             </Container>
+                            </>
+                             )}
                         </Grid>
                         <Grid item lg={12} sm={12} xs={12}>
                             <Divider variant="middle" />
-                            {renderIf(
-                                    props.myTurn,
+                            {props.myTurn ? (
                                     <Container classes={{ root: classes.controot }}>
                                     <div className="carousel-holder">
                                         <Flickity
@@ -348,10 +360,7 @@ function Dashboard(props) {
                                         </Flickity>
                                     </div>
                                 </Container>
-
-                            )}
-                            {renderIf(
-                                    !props.myTurn,
+                            ) : (
                                     <>
                                      <Typography
                                 colorBrightness="hint"
@@ -412,6 +421,14 @@ function Dashboard(props) {
                         </Grid>
                     </Grid>
                 </Grid>
+                ) : (
+            <Grid item lg={12} sm={12} xs={12}>
+            <Typography className={classes.center} color={"secondary"} variant="h1" colorBrightness={'light'}>
+                Waiting for the game to start...
+            </Typography>
+            </Grid>
+
+                )}
             </Grid>
         </>
     )
