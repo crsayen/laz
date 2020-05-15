@@ -116,6 +116,7 @@ function Dashboard(props) {
                 newGame={newGame}
                 joinGame={joinGame}
                 startGame={startGame}
+                props={props}
             />
             <Grid container justify="center" alignItems="center" spacing={2}>
                 <Grid item lg={12} sm={12} xs={12}>

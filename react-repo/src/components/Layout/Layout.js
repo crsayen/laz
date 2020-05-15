@@ -58,7 +58,7 @@ function Layout(props) {
             console.log("newGameCallback")
             success
                 ? setgameID(id)
-                : console.error("failed to create game") // TODO
+                : console.error("failed to create game") // TODO 
             console.log("gameID", gameID)
         })
     }
