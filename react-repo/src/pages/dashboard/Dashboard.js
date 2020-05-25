@@ -449,7 +449,7 @@ function Dashboard(props) {
                             </Button>
                         )
                         : props.gameID == ''
-                            ? (<>Use the sidebar to join a game</>)
+                            ? (<>Use the sidebar to create or join a game</>)
                             : <>Waiting for the game to start...</>
                 }
             </Typography>

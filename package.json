@@ -6,7 +6,8 @@
   "scripts": {
     "start_dev": "concurrently \"nodemon --exec babel-node src/index.js\" \"cd react-repo && node scripts/start.js\"",
     "build": "babel src --out-dir build",
-    "start": "npm run build && NODE_ENV=production node ./build/index.js"
+    "start": "npm run build && NODE_ENV=production node ./build/index.js",
+    "start_prod_test": "npm run build && NODE_ENV=production TEST=1 node ./build/index.js"
   },
   "resolutions": {
     "@babel/preset-env": "7.5.5"

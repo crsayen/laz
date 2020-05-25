@@ -1,13 +1,21 @@
-import "@babel/polyfill";
-import cors from "cors";
-import bodyParser from "body-parser";
-import user from "./routes/user";
-import deck from "../deck.js";
+//import "@babel/polyfill";
+//import cors from "cors";
+//import bodyParser from "body-parser";
+//import user from "./routes/user";
+//import deck from "../deck.js";
+const cors = require('cors')
+const bodyParser = require('body-parser')
+const deck = require('../deckreq.js').deck
 const _ = require("lodash");
 const asyncRedis = require("async-redis");
-const client = asyncRedis.createClient();
-const app = require("express")();
-const port = 8090;
+const redisHost = process.env.REDISHOST || process.env.TEST ? "10.128.0.9" : "127.0.0.1"
+const client = asyncRedis.createClient(6379, redisHost);
+const express = require('express')
+const app = express();
+app.use(express.static('/Users/chris/dev/laz/react-repo/build/'))
+app.use('/static', express.static('/Users/chris/dev/laz/react-repo/build/static'))
+const port = process.env.PORT || process.env.TEST ? 80 : 8090;
+
 require('dotenv').config();
 
 app.use(function(req, res, next) {
@@ -26,6 +34,7 @@ const DECK = {
   white: _.shuffle(deck.white)
 }
 app.use(cors());
+
 //app.use("/api/user", user);
 console.log(process.env.NODE_ENV)
 app.use(require('express-session')({ secret: 'keyboard cat', resave: false, saveUninitialized: false }));
@@ -35,11 +44,13 @@ const io = require("socket.io")(server);
 server.listen(port, "0.0.0.0", () => {
   console.log(`listening on *:${port}`);
 });
+
 const MAX_PLAYERS = 10; // TODO: put in redis
 client.flushall();
 client.on("error", e => console.error(e));
 var SOCKETS = new Map(); // TODO: put in redis
 
+//app.get('/', (req, res) => res.sendFile("/Users/chris/dev/laz/react-repo/build/index.html"))
 // TODO: temporary shuffle solution: shuffle daily, keep a [startIndex, incr] for each game
 // TODO: make it so that you can press enter to 'create' in new-game popup
 // TODO: when someone joins, do a popup that introduces the player to everyone
@@ -66,7 +77,6 @@ var SOCKETS = new Map(); // TODO: put in redis
   *   cards                 list      a list of the players cards, JSON.stringified
   *   playedCards           list      a list of the cards the player has submitted, JSON.stringified
   */
-
 
 io.on("connection", socket => {
 
