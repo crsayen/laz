@@ -118,7 +118,9 @@ function Sidebar(props) {
     const { isSidebarOpened } = useLayoutState()
     const layoutDispatch = useLayoutDispatch()
     const [joinGameText, setJoinGameText] = useState('')
+    const [joinGamePlayerText, setJoinGamePlayerText] = useState('')
     const [createGameText, setCreateGameText] = useState('')
+    const [createGamePlayerText, setCreateGamePlayerText] = useState('')
     const [selectedGame, setSelectedGame] = useState('')
     function createGameClick(event) {
         setIsCreateOpen(true)
@@ -163,17 +165,28 @@ function Sidebar(props) {
         setJoinGameText(e.target.value)
     }
 
+    const handleJoinGamePlayerText = (e) => {
+        setJoinGamePlayerText(e.target.value)
+    }
+
     const handleJoinClicked = () => {
-        // TODO: a popup that asks the user for a name props
+        console.log("join clicked")
+        if (joinGamePlayerText == '') {
+            return
+        }
         setJoinGameOpen(false)
         setIsOpen(false)
         toggleSidebar(layoutDispatch)
-        props.joinGame(joinGameText)
+        props.joinGame(joinGameText, joinGamePlayerText)
     }
 
     const handleCreateClicked = () => {
-        // TODO: a popup that asks the user for a name
-        props.newGame(createGameText)
+        if (createGamePlayerText == '') { return }
+        props.newGame(createGameText, createGamePlayerText)
+    }
+
+    const handleCreateGamePlayerText = (e) => {
+        setCreateGamePlayerText(e.target.value)
     }
 
     const handleCreateGameText = (e) => {
@@ -181,10 +194,11 @@ function Sidebar(props) {
     }
 
     const handleJoinFromGamesList = () => {
+        if (joinGamePlayerText == '') { return }
         setJoinGameOpen(false)
         setIsOpen(false)
         toggleSidebar(layoutDispatch)
-        props.joinGame(selectedGame)
+        props.joinGame(selectedGame, joinGamePlayerText)
     }
 
     const toggleDrawer = value => event => {
@@ -307,6 +321,11 @@ function Sidebar(props) {
                             <Box m={3} display="flex" flexDirection="column">
                                 <Typography>Join Game</Typography>
                                 <Input
+                                    placeholder="Player Name"
+                                    classes={{ root: classes2.input }}
+                                    onChange={handleJoinGamePlayerText}
+                                />
+                                <Input
                                     placeholder="Game Name"
                                     onChange={handleJoinGameText}
                                     classes={{ root: classes2.input }}
@@ -351,6 +370,11 @@ function Sidebar(props) {
                         >
                             <Box m={3} display="flex" flexDirection="column">
                                 <Typography>New Game</Typography>
+                                <Input
+                                    placeholder="Player Name"
+                                    classes={{ root: classes2.input }}
+                                    onChange={handleCreateGamePlayerText}
+                                />
                                 <Input
                                     placeholder="Game Name"
                                     classes={{ root: classes2.input }}
@@ -460,7 +484,12 @@ function Sidebar(props) {
                                         display="flex"
                                         flexDirection="column"
                                     >
-                                        <Typography>Join Game ?</Typography>
+                                        <Typography>Join Game?</Typography>
+                                        <Input
+                                            placeholder="Player Name"
+                                            classes={{ root: classes2.input }}
+                                            onChange={handleJoinGamePlayerText}
+                                        />
                                         <Box
                                             display="flex"
                                             justifyContent="flex-end"

@@ -40,6 +40,7 @@ client.flushall();
 client.on("error", e => console.error(e));
 var SOCKETS = new Map(); // TODO: put in redis
 
+// TODO: temporary shuffle solution: shuffle daily, keep a [startIndex, incr] for each game
 // TODO: make it so that you can press enter to 'create' in new-game popup
 // TODO: when someone joins, do a popup that introduces the player to everyone
 // TODO: PARTIAL FIX - old game continues to display after player joins a new game
@@ -72,7 +73,7 @@ io.on("connection", socket => {
   socket.on("newGame", async (room, player, callback) => {
     console.log(`new game ${room}, started by ${player}`)
     if (await client.exists(`${room}:game`)) {
-      callback(false);
+      callback({success: false, reason: "game exists"});
     } else {
       await client.hmset(
         `${room}:game`,
@@ -85,26 +86,32 @@ io.on("connection", socket => {
         "owner", player
       )
       addPlayer(room, player, false, socket, async (data) => {
-        if (data) {
+        if (data.success) {
           client.rpush('openGames', room)
           console.log("new game:", room)
           callback(data)
           return
         }
-        callback(false)
+        callback(data)
       })
     }
   })
 
   socket.on("getOpenGames", getOpenGames)
 
+  socket.on("test", console.log) 
+
   socket.on("joinGame", async (room, player, callback) => {
-    console.log(`${player} joined ${room}`)
+    console.log(`${player} is trying to join ${room}`)
     if (await client.exists(`${room}:game`)) {
+      let players = await getPlayers(room)
+      if (players.includes(player)) {
+        callback({success: false, reason: "player name taken"})
+      }
       let started = await client.hget(`${room}:game`,'started')
       addPlayer(room, player, !!parseInt(started), socket, callback);
     } else {
-      callback(false);
+      callback({success: false, reason: "game does not exist"});
     }
   });
 
@@ -213,6 +220,12 @@ io.on("connection", socket => {
   })
 })
 
+const getPlayers = async (room) => {
+  let players = await client.lrange(`${room}:players`, 0, -1)
+  console.log("players", players)
+  return players
+}
+
 const getOpenGames = async (callback) => {
   var GAMES = []
   const compileGames = (game, numPlayers, numGames, callback) => {
@@ -234,7 +247,7 @@ const addPlayer = async (room, player, started, socket, callback) => {
   let owner = await client.hget(`${room}:game`, 'owner')
   if (len > MAX_PLAYERS) {
     client.rpop(`${room}:players`)
-    callback(false);
+    callback({success: false, reason: "game full"});
   }
   else {
     client.rpush(`${room}:players`, player)
@@ -254,7 +267,7 @@ const addPlayer = async (room, player, started, socket, callback) => {
         )
       )
     })
-    callback({id: room, owner: owner, started: started});
+    callback({success: true, id: room, owner: owner, started: started});
   }
 };
 

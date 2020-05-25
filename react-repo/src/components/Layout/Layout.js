@@ -15,10 +15,22 @@ import io from 'socket.io-client';
 
 // TODO: after a player has played 'pick' number of cards, hide 'play card' button
 
-const name = Array(10)
-    .fill(null)
-    .map(() => Math.floor(Math.random() * 10).toString())
-    .join('')
+// this is for debugging. use it if you want to
+const logFunctionCall = (func, args) => {
+    var STRIP_COMMENTS = /(\/\/.*$)|(\/\*[\s\S]*?\*\/)|(\s*=[^,\)]*(('(?:\\'|[^'\r\n])*')|("(?:\\"|[^"\r\n])*"))|(\s*=[^,\)]*))/mg;
+    var ARGUMENT_NAMES = /([^\s,]+)/g;
+    var fnStr = func.toString().replace(STRIP_COMMENTS, '');
+    var params = fnStr.slice(fnStr.indexOf('(')+1, fnStr.indexOf(')')).match(ARGUMENT_NAMES);
+    if(params === null)
+        params = [];
+    let padding = Array(args.length - params.length).fill(null)
+    params = [...params, ...padding]
+    var output = {}
+    for (let i = 0; i < args.length; i++) {
+        output[params[i]] = args[i]
+    }
+    console.log(func.name, output)
+}
 
 const socket = io.connect('localhost:8090');
 
@@ -53,34 +65,39 @@ function Layout(props) {
         setUserCards(newCards)
     }, [_userCard]) // eslint-disable-line
 
-    const newGame = (id) => {
-        console.log("new game:",id)
-        socket.emit('newGame', id, name, gameInfo => { // {id, owner, started }
-            console.log("newGameCallback")
-            if (gameInfo) {
+    const newGame = (gameName, userName) => {
+        setUsername(userName.slice())
+        console.log("username", username)
+        logFunctionCall(newGame, [gameName, userName])
+        socket.emit('newGame', gameName, userName, gameInfo => {
+            console.log("gameInfo", gameInfo)
+            if (gameInfo.success) {
                 setgameID(gameInfo.id)
                 setGameOwner(gameInfo.owner)
             } else {
-                console.error("failed to create game") // TODO
+                console.error(gameInfo.reason) // TODO: handle new game failure
             }
             console.log("gameID", gameID)
         })
     }
 
-    const joinGame = (id) => {
-        socket.emit('joinGame', id, name, gameInfo => {
-            if (gameInfo) {
+    const joinGame = (gameName, userName) => {
+        logFunctionCall(joinGame, [gameName, userName])
+        socket.emit('joinGame', gameName, userName, gameInfo => {
+            if (gameInfo.success) {
+                setUsername(userName.slice())
                 setgameID(gameInfo.id)
                 setGameOwner(gameInfo.owner)
                 setGameJoined(true)
             } else {
-                console.error("failed to join game")
+                console.error(gameInfo.reason)
+                if (gameInfo.reason == "game does not exist") {
+                    // TODO: let the player know somehow
+                } else if (gameInfo.reason == "player name taken") {
+                    // TODO: let the player know somehow
+                }
             }
         })
-    }
-
-    const pickUsername = (name) => {
-        socket.emit('usernameSelected', name, success => success ? "it worked!" : "your name is taken")
     }
 
     const startGame = () => {
@@ -92,11 +109,13 @@ function Layout(props) {
     }
 
     const playCard = (e, playedCard) => {
+        logFunctionCall(playCard, [e, playedCard])
         e.preventDefault()
         // eslint-disable-next-line
         let newCards = myCards.slice().filter(card => card != playedCard)
         setMyCards(newCards)
-        socket.emit('playWhiteCard', playedCard, name, console.log)
+        console.log("username", username)
+        socket.emit('playWhiteCard', playedCard, username, console.log)
     }
 
     const doSetMyCards = cards => {
@@ -148,7 +167,6 @@ function Layout(props) {
             <Header history={props.history} />
             <Sidebar
                 newGame={newGame}
-                pickUsername={pickUsername}
                 joinGame={joinGame}
                 openGames={openGames}
                 fetchGames={fetchGames}
@@ -166,6 +184,7 @@ function Layout(props) {
                     <Route path="/app/dashboard" render={
                         (props) =>
                             <Dashboard
+                                gameOwner={gameOwner}
                                 winnerName={winnerName}
                                 allCardsPlayed={allCardsPlayed}
                                 winnerCards={winnerCards}
