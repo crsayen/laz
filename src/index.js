@@ -55,14 +55,14 @@ var SOCKETS = new Map(); // TODO: put in redis
   *   blackCursor           int       keeps track of which black card the game is on
   *   whiteCursor           int       keeps track of which white card the game is on
   *   numberOfCardsPlayed   int       self explanatory
-  *   numberOfPlayersReady  int       self explanatory //TODO: rather than keeping a counter, give <game>:player a 'ready' field and count them
+  *   numberOfPlayersReady  int       self explanatory //TODO: rather than keeping a counter, give <game>:<player> a 'ready' field and count them
   *   pick                  int       how many white cards each player must submit
   *   started               bool      whether the game has started or not //TODO: actually utilize this. we dont touch it.
   *   owner                 string    the name of the player who started the game
   *
   * <room>:players          list      a list of the names of the players in the game
   *
-  * <room>:player           hash
+  * <room>:<player>         hash
   *   cards                 list      a list of the players cards, JSON.stringified
   *   playedCards           list      a list of the cards the player has submitted, JSON.stringified
   */
@@ -213,6 +213,7 @@ io.on("connection", socket => {
       )
     }
     else {
+      client.lrem("openGames", 1, room)
       client.del(`${room}:game`)
       client.del(`${room}:players`)
     }
@@ -267,6 +268,7 @@ const addPlayer = async (room, player, started, socket, callback) => {
           )
         )
       )
+      io.to(room).emit("playerJoined", player)
     })
     callback({success: true, id: room, owner: owner, started: started});
   }

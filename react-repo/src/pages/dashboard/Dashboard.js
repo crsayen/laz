@@ -58,20 +58,31 @@ function Dashboard(props) {
     }
 
     if (props.gameJoined) {
-        Swal.fire(
-            {
-                title: `Joined Game`,
-                text: `Welcome to ${props.gameID}`,
-                icon: 'success',
-                timer: 2000,
-                width: '20rem',
-                showConfirmButton: false,
-                timer: 1500
-            }
-        ).then(() => {
+        Swal.fire({
+            title: `Joined Game`,
+            text: `Welcome to ${props.gameID}`,
+            timer: 2000,
+            icon: 'success',
+            width: '20rem',
+            showConfirmButton: false,
+        }).then(() => {
             props.setGameJoined(false)
         })
     }
+
+    useEffect(() => {
+        props.socket.on('playerJoined', player => {
+            if (props.username != player){
+                Swal.fire({
+                    title: `${player} joined!`,
+                    text: `Welcome!`,
+                    timer: 2000,
+                    width: '20rem',
+                    showConfirmButton: false
+                })
+            }
+        });
+    }, []) // eslint-disable-line
 
     const flickityOptions = {
         adaptiveHeight: true,
@@ -113,7 +124,7 @@ function Dashboard(props) {
             >
                 <Icon path={SettingsIcon} size={1} color="#fff" />
             </Fab>
-            <SettingsPopper
+            {/* <SettingsPopper
                 id={id}
                 open={open}
                 anchorEl={anchorEl}
@@ -121,7 +132,7 @@ function Dashboard(props) {
                 joinGame={joinGame}
                 startGame={startGame}
                 props={props}
-            />
+            /> */}
             <Grid container justify="center" alignItems="center" spacing={2}>
                 { props.gameStarted ? (
                 <Grid item lg={12} sm={12} xs={12}>
@@ -246,7 +257,7 @@ function Dashboard(props) {
                                                             className={classes.waitingCardContent}
                                                             color="textSecondary"
                                                         >
-                                                            Waiting...
+                                                            Waiting for the other players to pick cards
                                                         </Typography>
                                                         <CircularProgress/>
                                                     </CardContent>
@@ -428,7 +439,19 @@ function Dashboard(props) {
                 ) : (
             <Grid item lg={12} sm={12} xs={12}>
             <Typography className={classes.center} color={"secondary"} variant="h1" colorBrightness={'light'}>
-                Waiting for the game to start...
+                {
+                    props.gameOwner == props.username && props.username != ''
+                        ? (
+                            <Button // TODO: style this thing
+                                onClick={() => startGame()}
+                            >
+                                Start Game
+                            </Button>
+                        )
+                        : props.gameID == ''
+                            ? (<>Use the sidebar to join a game</>)
+                            : <>Waiting for the game to start...</>
+                }
             </Typography>
             </Grid>
 

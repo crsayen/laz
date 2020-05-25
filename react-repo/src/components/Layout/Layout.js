@@ -46,7 +46,7 @@ function Layout(props) {
     const [winnerName, setWinnerName] = useState('')
     const [allCardsPlayed, setAllCardsPlayed] = useState(false)
     const [winnerCards, setWinnerCards] = useState([{ text: '' }])
-    const [gameID, setgameID] = useState('test1')
+    const [gameID, setgameID] = useState('')
     const [myCards, setMyCards] = useState([])
     const [blackCard, setBlackCard] = useState(false)
     const [_userCard, _setUserCard] = useState([])
@@ -87,6 +87,7 @@ function Layout(props) {
         socket.emit('joinGame', gameName, userName, gameInfo => {
             if (gameInfo.success) {
                 setUsername(userName.slice())
+                setGameStarted(gameInfo.started)
                 setgameID(gameInfo.id)
                 setGameOwner(gameInfo.owner)
                 setGameJoined(true)
@@ -188,6 +189,7 @@ function Layout(props) {
                         (props) =>
                             <Dashboard
                                 gameOwner={gameOwner}
+                                username={username}
                                 winnerName={winnerName}
                                 allCardsPlayed={allCardsPlayed}
                                 winnerCards={winnerCards}
@@ -204,7 +206,6 @@ function Layout(props) {
                                 startGame={startGame}
                                 selectCard={selectCard}
                                 playCard={playCard}
-                                gameJoined={gameJoined}
                                 setGameJoined={setGameJoined}
                                 gameStarted={gameStarted}
                                 myNumPlayedCards={myNumPlayedCards}
