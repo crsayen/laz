@@ -59,6 +59,7 @@ function Layout(props) {
     const [players, setPlayers] = useState([])
     const [gameOwner, setGameOwner] = useState(null)
     const [gameStarted, setGameStarted] = useState(false)
+    const [myNumPlayedCards, setMyNumPlayedCards] = useState(0)
 
     useEffect(() => {
         let newCards = userCards.slice().concat(_userCard)
@@ -110,6 +111,7 @@ function Layout(props) {
 
     const playCard = (e, playedCard) => {
         logFunctionCall(playCard, [e, playedCard])
+        setMyNumPlayedCards(myNumPlayedCards + 1)
         e.preventDefault()
         // eslint-disable-next-line
         let newCards = myCards.slice().filter(card => card != playedCard)
@@ -150,6 +152,7 @@ function Layout(props) {
         })
         socket.on('winnerSelected', (user, cards) => {
             setAllCardsPlayed(false)
+            setMyNumPlayedCards(0)
             setWinnerName(user)
             setUserCards([])
             setWinnerCards(cards)
@@ -204,6 +207,7 @@ function Layout(props) {
                                 gameJoined={gameJoined}
                                 setGameJoined={setGameJoined}
                                 gameStarted={gameStarted}
+                                myNumPlayedCards={myNumPlayedCards}
                                 {...props}
                             />
                         }

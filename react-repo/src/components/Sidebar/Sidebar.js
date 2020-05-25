@@ -451,7 +451,7 @@ function Sidebar(props) {
                                             </ListItemAvatar>
                                             <ListItemText
                                                 primary={data.name}
-                                                secondary={`Owner: ${data.leader} Players: ${data.players}`}
+                                                secondary={`Owner: ${data.owner} Players: ${data.players}`}
                                             />
                                             <ListItemSecondaryAction>
                                                 <IconButton

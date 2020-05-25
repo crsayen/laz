@@ -38,15 +38,19 @@ function Dashboard(props) {
         setAnchorEl(open ? null : event.currentTarget)
     }
 
+    const getWinningText = () => {
+        let texts = props.winnerCards.map(card => card.text)
+        return texts.join('\n\n')
+    }
+
     if (winnderDialogOpen) {
         Swal.fire({
             title: `${props.winnerName} Won!`,
-            text: 'TODO',
+            text: getWinningText(),
             icon: 'success',
             timer: 7000,
             width: '20rem',
-            showConfirmButton: false,
-            timer: 1500
+            showConfirmButton: true,
         }).then(() => {
             props.socket.emit('ready')
             setWinnerDialogOpen(false)
@@ -85,16 +89,16 @@ function Dashboard(props) {
     const handleWinnerDialogClose = () => {
         setWinnerDialogOpen(false)
         props.setWinnerCards([{text: ''}])
-        props.socket.emit('ready', true) // TODO no one cares if its true
+        props.socket.emit('ready')
     }
 
     useEffect(() => {
         setWinnerDialogOpen(!!props.winnerCards[0].text)
     }, [props.winnerCards]) // eslint-disable-line
 
-    const newGame = () => props.newGame() // TODO
-    const joinGame = () => props.joinGame() // TODO
-    const startGame = () => props.startGame() // TODO
+    const newGame = () => props.newGame()
+    const joinGame = () => props.joinGame()
+    const startGame = () => props.startGame()
 
     const renderIf = (condition, component) => (condition ? component : <></>)
 
@@ -165,13 +169,13 @@ function Dashboard(props) {
                                             onClick={handleClick}
                                         />
                                     </Box>
-                                    <Typography
+                                    {/* <Typography
                                         colorBrightness="hint"
                                         variant="caption"
                                         style={{ textAlign: 'center' }}
                                         noWrap
                                     >
-                                        Up Next:
+                                        Up Next: // TODO: do we care? If we do, it's gonna take some work
                                     </Typography>
                                     <Box
                                         alignItems="center"
@@ -193,7 +197,7 @@ function Dashboard(props) {
                                             label="RooRoo"
                                             onClick={handleClick}
                                         />
-                                    </Box>
+                                    </Box> */}
                                 </Grid>
                             </Grid>
                         </Grid>
@@ -391,7 +395,7 @@ function Dashboard(props) {
                                                 </CardContent>
 
                                                 {renderIf(
-                                                    !props.myTurn && !props.allCardsPlayed,
+                                                    !props.myTurn && !props.allCardsPlayed && props.myNumPlayedCards < props.blackCard.pick,
                                                     <>
                                                         <Divider variant="middle" />
                                                         <CardActions>

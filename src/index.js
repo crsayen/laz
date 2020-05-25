@@ -166,7 +166,7 @@ io.on("connection", socket => {
     callback(true);
   });
 
-  socket.on("ready", async ready => {
+  socket.on("ready", async () => {
     const room = Object.keys(socket.rooms)[1]
     let numberOfPlayersReady =
       await client.hincrby(`${room}:game`, "numberOfPlayersReady", 1)
@@ -228,16 +228,17 @@ const getPlayers = async (room) => {
 
 const getOpenGames = async (callback) => {
   var GAMES = []
-  const compileGames = (game, numPlayers, numGames, callback) => {
-    GAMES.push({ name: game, players: numPlayers, leader: 'TODO' })
+  const compileGames = (game, numPlayers, numGames, owner, callback) => {
+    GAMES.push({ name: game, players: numPlayers, leader: 'TODO' , owner: owner})
     if (GAMES.length == numGames) {
       callback(GAMES)
     }
   }
   let games = await client.lrange("openGames", 0, -1)
   games.forEach(async game => {
-  let players = await client.lrange(`${game}:players`, 0, -1)
-    compileGames(game, players.length, games.length, callback)
+    let owner = await client.hget(`${game}:game`, "owner")
+    let players = await client.lrange(`${game}:players`, 0, -1)
+    compileGames(game, players.length, games.length, owner, callback)
   })
 }
 
