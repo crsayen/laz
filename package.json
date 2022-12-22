@@ -28,7 +28,7 @@
     "express-session": "^1.17.0",
     "flickity": "^2.2.1",
     "flickity-imagesloaded": "^2.0.0",
-    "jsonwebtoken": "^8.5.1",
+    "jsonwebtoken": "^9.0.0",
     "nodemon": "^1.18.10",
     "passport": "^0.4.0",
     "passport-google-oauth": "^2.0.0",
